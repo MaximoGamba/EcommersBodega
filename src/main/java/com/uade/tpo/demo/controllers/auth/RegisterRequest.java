@@ -1,6 +1,6 @@
 package com.uade.tpo.demo.controllers.auth;
 
-import com.uade.tpo.demo.entity.Role;
+import com.uade.tpo.demo.entity.RoleName;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,5 +17,5 @@ public class RegisterRequest {
     private String lastname;
     private String email;
     private String password;
-    private Role role;
+    private RoleName role;
 }
