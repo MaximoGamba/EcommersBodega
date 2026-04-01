@@ -5,11 +5,12 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import lombok.Data;
 
 @Data // Genera los getters y setters
 @Entity // Indica que la clase es una entidad
+@Table(name = "categories")
 public class Category {
 
     public Category() {
@@ -23,9 +24,6 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column
+    @Column(nullable = false, unique = true)
     private String description;
-
-    @OneToOne(mappedBy = "category")
-    private Product product;
 }
