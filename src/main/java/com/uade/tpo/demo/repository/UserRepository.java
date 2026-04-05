@@ -11,4 +11,5 @@ import com.uade.tpo.demo.entity.User;
 public interface UserRepository extends JpaRepository<User, Long> { // Extiende de JpaRepository para que tenga los
                                                                     // métodos de CRUD
     Optional<User> findByEmail(String mail); // Busca un usuario por su email
+    Optional<User> findByUsername(String username);
 }
