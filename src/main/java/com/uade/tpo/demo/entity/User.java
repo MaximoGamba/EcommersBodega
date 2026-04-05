@@ -38,9 +38,6 @@ public class User implements UserDetails { // Implementa la interfaz UserDetails
     @Column(nullable = false, unique = true)
     private String email;
     
-    @Column(nullable = false, unique = true)
-    private String username;
-
     private String name;
 
     @JsonIgnore
