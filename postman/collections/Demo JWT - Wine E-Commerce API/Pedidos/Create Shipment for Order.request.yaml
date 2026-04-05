@@ -1,0 +1,20 @@
+$kind: http-request
+name: Create Shipment for Order
+method: POST
+url: '{{baseUrl}}/pedidos/{{pedidoId}}/envios'
+order: 6000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{authToken}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "address": "Av. Corrientes 1234, Buenos Aires",
+      "trackingNumber": "TRK-001"
+    }

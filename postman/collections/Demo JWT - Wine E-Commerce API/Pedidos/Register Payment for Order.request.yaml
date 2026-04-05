@@ -1,0 +1,20 @@
+$kind: http-request
+name: Register Payment for Order
+method: POST
+url: '{{baseUrl}}/pedidos/{{pedidoId}}/pagos'
+order: 7000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{authToken}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "amount": 3000.00,
+      "method": "CREDIT_CARD"
+    }

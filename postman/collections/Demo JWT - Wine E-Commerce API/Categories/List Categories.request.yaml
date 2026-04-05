@@ -1,0 +1,17 @@
+$kind: http-request
+name: List Categories
+method: GET
+url: '{{baseUrl}}/categories'
+order: 1000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{authToken}}'
+queryParams:
+  - key: page
+    value: ''
+    disabled: true
+  - key: size
+    value: ''
+    disabled: true
