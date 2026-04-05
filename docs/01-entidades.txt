@@ -1,0 +1,92 @@
+================================================================================
+  CAPA DE ENTIDADES (JPA / Hibernate)
+  Paquete: com.uade.tpo.demo.entity
+================================================================================
+
+Las entidades mapean tablas de la base de datos y las relaciones entre el
+dominio de e-commerce (bodega de vinos): usuarios, roles, vinos, pedidos,
+envíos y pagos.
+
+--------------------------------------------------------------------------------
+1. USUARIO Y SEGURIDAD
+--------------------------------------------------------------------------------
+
+User (tabla: users)
+  - Implementa UserDetails de Spring Security (login por email).
+  - Campos principales: id, email (único), password, firstName, lastName, name.
+  - Relación ManyToOne con Role (rol obligatorio).
+  - Relación OneToMany con Order (pedidos del usuario).
+  - getAuthorities() devuelve ROLE_USER o ROLE_ADMIN según el rol (prefijo ROLE_
+    para @PreAuthorize hasRole).
+  - Anotaciones Jackson: @JsonIgnore en password y en la lista orders para no
+    exponer hash ni ciclos infinitos en JSON.
+
+Role (tabla: roles)
+  - id, name (enum RoleName persistido como STRING, único).
+
+RoleName (enum)
+  - USER, ADMIN.
+
+--------------------------------------------------------------------------------
+2. CATÁLOGO Y CLASIFICACIÓN DEL VINO
+--------------------------------------------------------------------------------
+
+Wine (tabla: wines)
+  - Producto principal: name, winery, year, price, stock, discountPercent.
+  - Relaciones ManyToOne obligatorias con tablas de catálogo:
+    Color, Cepa, Azucar, Crianza, Elaboracion, Medida.
+  - discountPercent: porcentaje 0–100 sobre el precio de lista; el servicio de
+    pedidos usa este valor para calcular el precio unitario efectivo al armar
+    líneas del pedido.
+
+Category (tabla: categories)
+  - Categorías simples (descripción única). Usado por el módulo de categorías
+    original del proyecto.
+
+Color, Cepa, Azucar, Crianza, Elaboracion, Medida
+  - Catálogos auxiliares con id y name (único cada uno).
+
+--------------------------------------------------------------------------------
+3. PEDIDOS
+--------------------------------------------------------------------------------
+
+Order (tabla: orders)
+  - Cabecera del pedido: usuario, fecha de creación, estado (enum), total.
+  - OneToMany con OrderItem (ítems / detalle), cascade y orphanRemoval.
+  - OneToOne opcional con Shipment y con Payment (lado inverso mappedBy).
+
+OrderItem (tabla: order_items)
+  - Línea de pedido: order, wine, quantity, unitPrice, subtotal.
+  - unitPrice se congela al agregar la línea (precio con descuento vigente).
+
+OrderStatus (enum)
+  - CREATED, PAID, CANCELLED, SHIPPED (y otros según evolución del negocio).
+
+--------------------------------------------------------------------------------
+4. ENVÍO Y PAGO
+--------------------------------------------------------------------------------
+
+Shipment (tabla: shipments)
+  - Un envío por pedido (OneToOne con Order, join column única order_id).
+  - address, status (ShipmentStatus), trackingNumber, createdAt.
+
+ShipmentStatus (enum)
+  - PENDING, SHIPPED, DELIVERED, CANCELLED.
+
+Payment (tabla: payments)
+  - Un pago por pedido (OneToOne con Order).
+  - amount, status (PaymentStatus), method, createdAt.
+
+PaymentStatus (enum)
+  - PENDING, APPROVED, FAILED.
+
+================================================================================
+Notas
+================================================================================
+
+- Hibernate puede crear/actualizar esquema según spring.jpa.hibernate.ddl-auto
+  en application.properties (típicamente update en desarrollo).
+- Los enums de estado facilitan reglas de negocio en servicios (por ejemplo,
+  solo modificar ítems si el pedido está en CREATED).
+
+================================================================================

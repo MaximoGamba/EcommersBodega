@@ -1,0 +1,29 @@
+================================================================================
+  DOCUMENTACIÓN DEL PROYECTO (API REST + JWT + JPA)
+  Carpeta: docs/
+================================================================================
+
+Este conjunto de archivos .txt resume la estructura y el trabajo realizado en el
+proyecto Spring Boot, ordenado por capas.
+
+Archivos incluidos:
+
+  01-entidades.txt
+      Modelo de dominio JPA: tablas, relaciones, enums y notas sobre seguridad
+      en la serialización JSON.
+
+  02-repositorios.txt
+      Interfaces Spring Data JPA, consultas derivadas y WineSpecification.
+
+  03-servicios.txt
+      Lógica de negocio: interfaces, implementaciones y DTOs internos (payload).
+
+  04-controladores.txt
+      Endpoints REST, DTOs de entrada/salida y reglas de acceso resumidas.
+
+  05-seguridad-y-excepciones.txt
+      JWT, SecurityConfig, manejo global de errores y respuestas 401/403.
+
+Paquete base del código: com.uade.tpo.demo
+
+================================================================================

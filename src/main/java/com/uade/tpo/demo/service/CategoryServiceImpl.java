@@ -13,23 +13,25 @@ import com.uade.tpo.demo.exceptions.CategoryDuplicateException;
 import com.uade.tpo.demo.repository.CategoryRepository;
 
 @Service
-public class CategoryServiceImpl implements CategoryService {
+public class CategoryServiceImpl implements CategoryService { // Implementación del servicio para categorías
 
     @Autowired
-    private CategoryRepository categoryRepository;
+    private CategoryRepository categoryRepository; // Repositorio para categorías
 
-    public Page<Category> getCategories(PageRequest pageable) {
+    public Page<Category> getCategories(PageRequest pageable) { // Método para obtener todas las categorías
         return categoryRepository.findAll(pageable);
-    }
+    } // Método para obtener todas las categorías
 
-    public Optional<Category> getCategoryById(Long categoryId) {
+    public Optional<Category> getCategoryById(Long categoryId) { // Método para obtener una categoría por su id
         return categoryRepository.findById(categoryId);
-    }
+    } // Método para obtener una categoría por su id
 
-    public Category createCategory(String description) throws CategoryDuplicateException {
-        List<Category> categories = categoryRepository.findByDescription(description);
+    public Category createCategory(String description) throws CategoryDuplicateException { // Método para crear una
+                                                                                           // categoría
+        List<Category> categories = categoryRepository.findByDescription(description); // Busca una categoría por su
+                                                                                       // descripción
         if (categories.isEmpty())
-            return categoryRepository.save(new Category(description));
-        throw new CategoryDuplicateException();
-    }
+            return categoryRepository.save(new Category(description)); // Guarda una categoría
+        throw new CategoryDuplicateException(); // Lanza una excepción si la categoría ya existe
+    } // Método para crear una categoría
 }

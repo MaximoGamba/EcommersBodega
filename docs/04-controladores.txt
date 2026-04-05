@@ -1,0 +1,123 @@
+================================================================================
+  CAPA DE CONTROLADORES (REST API)
+  Paquete base: com.uade.tpo.demo.controllers
+================================================================================
+
+Los controladores delegan en servicios, devuelven entidades o DTOs de respuesta
+y aplican @PreAuthorize donde la ruta no es pública.
+
+--------------------------------------------------------------------------------
+Rutas públicas (resumen; detalle en SecurityConfig)
+--------------------------------------------------------------------------------
+
+  POST /auth/login
+  POST /usuarios  (registro)
+  GET  /vinos, GET /vinos/{id}
+  GET  /categories, /categories/**
+  POST /api/v1/auth/**  (register/authenticate legacy)
+
+El resto requiere JWT salvo configuración explícita.
+
+--------------------------------------------------------------------------------
+1. AuthController  —  /auth
+--------------------------------------------------------------------------------
+
+  POST /auth/login
+      Cuerpo: AuthenticationRequest (email, password).
+      Respuesta: AuthenticationResponse (access_token).
+
+--------------------------------------------------------------------------------
+2. AuthenticationController  —  /api/v1/auth
+--------------------------------------------------------------------------------
+
+  POST /register, POST /authenticate
+      Mantienen compatibilidad con clientes que usan el prefijo /api/v1/auth.
+
+--------------------------------------------------------------------------------
+3. UsuarioController  —  /usuarios
+--------------------------------------------------------------------------------
+
+  GET    /usuarios              → listar (solo ADMIN)
+  GET    /usuarios/{id}/pedidos → pedidos del usuario (ADMIN o el propio user)
+  GET    /usuarios/{id}         → perfil (ADMIN o el propio user)
+  POST   /usuarios              → registro; respuesta UsuarioResponse 201
+  PUT    /usuarios/{id}         → actualizar (ADMIN o el propio user)
+  DELETE /usuarios/{id}         → eliminar (ADMIN)
+
+  DTOs: UsuarioResponse, UsuarioUpdateRequest (mapeo a UserUpdateInput).
+
+--------------------------------------------------------------------------------
+4. VinoController  —  /vinos
+--------------------------------------------------------------------------------
+
+  GET    /vinos
+      Query params: filtros (name, minPrice, maxPrice, year, colorId, cepaId,
+      azucarId, crianzaId, elaboracionId, medidaId), paginación (page, size,
+      sortBy, direction). Respuesta: Page<Wine>.
+
+  GET    /vinos/{id}
+  POST   /vinos                 → crear (ADMIN)
+  PUT    /vinos/{id}            → modificar (ADMIN)
+  DELETE /vinos/{id}            → eliminar (ADMIN)
+  PUT    /vinos/{id}/stock      → body VinoStockRequest (ADMIN)
+  PUT    /vinos/{id}/descuento  → body VinoDescuentoRequest (ADMIN)
+
+  DTO: VinoRequest → se copia a WineUpsertInput.
+
+--------------------------------------------------------------------------------
+5. PedidoController  —  /pedidos
+--------------------------------------------------------------------------------
+
+  GET    /pedidos               → todos (ADMIN)
+  GET    /pedidos/{id}          → uno (dueño o ADMIN, orderAccess)
+  POST   /pedidos               → crear (usuario actual; admin puede userId)
+  PUT    /pedidos/{id}          → estado/total (dueño o ADMIN)
+  DELETE /pedidos/{id}          → cancelar (dueño o ADMIN)
+  POST   /pedidos/{id}/envios   → crear envío (dueño o ADMIN)
+  POST   /pedidos/{id}/pagos    → registrar pago (dueño o ADMIN)
+
+  Cuerpo: PedidoCreateInput, PedidoUpdateInput, EnvioCreateInput, PagoCreateInput.
+
+--------------------------------------------------------------------------------
+6. PedidoDetalleController  —  /pedidos/{pedidoId}/detalles
+--------------------------------------------------------------------------------
+
+  GET    .../detalles
+  POST   .../detalles           → DetallePedidoRequest (wineId, quantity)
+  PUT    .../detalles/{idDetalle} → DetallePedidoUpdateRequest
+  DELETE .../detalles/{idDetalle}
+
+  Acceso: orderAccess.canAccess(authentication, pedidoId).
+
+--------------------------------------------------------------------------------
+7. EnvioController  —  /envios
+--------------------------------------------------------------------------------
+
+  GET /envios/{id}
+  PUT /envios/{id}              → EnvioUpdateInput
+
+  Acceso: shipmentAccess.canAccess.
+
+--------------------------------------------------------------------------------
+8. PagoController  —  /pagos
+--------------------------------------------------------------------------------
+
+  GET /pagos/{id}
+  PUT /pagos/{id}               → PagoUpdateInput
+
+  Acceso: paymentAccess.canAccess.
+
+--------------------------------------------------------------------------------
+9. CategoriesController  —  /categories
+--------------------------------------------------------------------------------
+
+  CRUD/listado de categorías (módulo original del proyecto).
+
+--------------------------------------------------------------------------------
+Configuración relacionada (no son “negocio” pero viven bajo controllers/config)
+--------------------------------------------------------------------------------
+
+  - SecurityConfig, JwtAuthenticationFilter, JwtService, ApplicationConfig
+    (beans de seguridad y codificación de contraseña).
+
+================================================================================

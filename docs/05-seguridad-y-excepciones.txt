@@ -1,0 +1,77 @@
+================================================================================
+  SEGURIDAD JWT, COMPONENTES AUXILIARES Y MANEJO DE EXCEPCIONES
+================================================================================
+
+--------------------------------------------------------------------------------
+1. Seguridad (JWT + Spring Security)
+--------------------------------------------------------------------------------
+
+SecurityConfig (controllers.config)
+  - CSRF deshabilitado (API stateless).
+  - Sesión STATELESS.
+  - Rutas permitidas sin token: login, registro, catálogo GET de vinos,
+    categorías GET, /api/v1/auth/**.
+  - Cualquier otra petición: authenticated().
+  - Filtro JwtAuthenticationFilter antes de UsernamePasswordAuthenticationFilter.
+  - exceptionHandling:
+      * JwtAuthenticationEntryPoint → 401 JSON si falta token o es inválido
+        a nivel de filtro.
+      * JwtAccessDeniedHandler → 403 JSON si no hay permisos a nivel de filtro.
+
+JwtAuthenticationFilter
+  - Lee header Authorization: Bearer <token> (incluye espacio después de Bearer).
+  - Valida con JwtService y carga UserDetails; setea SecurityContext.
+
+JwtService
+  - Genera y parsea JWT (subject = email, expiración configurable).
+
+ApplicationConfig
+  - UserDetailsService desde UserRepository por email.
+  - DaoAuthenticationProvider, AuthenticationManager, BCrypt PasswordEncoder.
+
+DemoApplication
+  - @EnableMethodSecurity para @PreAuthorize en controladores.
+
+Componentes en package security
+  - SecurityUtils: usuario actual e isAdmin.
+  - orderAccess, shipmentAccess, paymentAccess: SpEL en @PreAuthorize
+    (@orderAccess.canAccess(authentication, #id), etc.).
+  - JwtAuthenticationEntryPoint, JwtAccessDeniedHandler (respuestas JSON).
+
+Roles en token/autoridades
+  - User.getAuthorities() → ROLE_USER / ROLE_ADMIN (hasRole('ADMIN') en expresiones).
+
+--------------------------------------------------------------------------------
+2. Manejo de excepciones (REST)
+--------------------------------------------------------------------------------
+
+RestExceptionHandler (exceptions, @RestControllerAdvice)
+  - Respuesta JSON uniforme: campos "error", "code"; a veces "violations".
+
+  Cubre entre otros:
+    - ResourceNotFoundException → 404 NOT_FOUND
+    - BadRequestException → 400 BAD_REQUEST
+    - CategoryDuplicateException → 409 DUPLICATE_CATEGORY
+    - MethodArgumentNotValidException (@Valid) → 400 VALIDATION_ERROR + violations
+    - ConstraintViolationException → 400 CONSTRAINT_VIOLATION
+    - HttpMessageNotReadableException → 400 INVALID_JSON
+    - MissingServletRequestParameterException, MethodArgumentTypeMismatchException
+    - AccessDeniedException (capa MVC) → 403 FORBIDDEN
+    - BadCredentialsException, AuthenticationException → 401 UNAUTHORIZED
+    - DataIntegrityViolationException → 409 DATA_INTEGRITY
+    - IllegalArgumentException → 400 ILLEGAL_ARGUMENT
+
+  Logging: principalmente DEBUG en 4xx de cliente; WARN en violaciones de
+  integridad de datos.
+
+Nota: errores 401/403 que ocurren antes de llegar al controlador (filtro JWT)
+salen por EntryPoint / AccessDeniedHandler, no por RestExceptionHandler.
+
+--------------------------------------------------------------------------------
+3. Otras clases en exceptions
+--------------------------------------------------------------------------------
+
+  - ResourceNotFoundException, BadRequestException (RuntimeException).
+  - CategoryDuplicateException (checked, usada en CategoryService).
+
+================================================================================

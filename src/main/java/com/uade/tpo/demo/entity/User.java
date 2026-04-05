@@ -3,6 +3,8 @@ package com.uade.tpo.demo.entity;
 import java.util.Collection;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -38,6 +40,7 @@ public class User implements UserDetails { // Implementa la interfaz UserDetails
 
     private String name;
 
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 
@@ -46,6 +49,7 @@ public class User implements UserDetails { // Implementa la interfaz UserDetails
     @Column(nullable = false)
     private String lastName;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user")
     private List<Order> orders;
 
@@ -55,7 +59,7 @@ public class User implements UserDetails { // Implementa la interfaz UserDetails
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role.getName().name()));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.getName().name()));
     }
 
     @Override
