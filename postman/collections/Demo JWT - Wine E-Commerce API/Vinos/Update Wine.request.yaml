@@ -1,0 +1,30 @@
+$kind: http-request
+name: Update Wine
+method: PUT
+url: '{{baseUrl}}/vinos/{{wineId}}'
+order: 4000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{authToken}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Malbec Reserva Updated",
+      "winery": "Bodega Norton",
+      "year": 2021,
+      "price": 1600.00,
+      "stock": 80,
+      "colorId": 1,
+      "cepaId": 1,
+      "azucarId": 1,
+      "crianzaId": 1,
+      "elaboracionId": 1,
+      "medidaId": 1,
+      "discountPercent": 5.00
+    }

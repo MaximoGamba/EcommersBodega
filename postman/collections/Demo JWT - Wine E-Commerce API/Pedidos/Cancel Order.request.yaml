@@ -1,0 +1,10 @@
+$kind: http-request
+name: Cancel Order
+method: DELETE
+url: '{{baseUrl}}/pedidos/{{pedidoId}}'
+order: 5000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{authToken}}'

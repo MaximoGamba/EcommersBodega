@@ -1,0 +1,30 @@
+$kind: http-request
+name: Create Wine
+method: POST
+url: '{{baseUrl}}/vinos'
+order: 3000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{authToken}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Malbec Reserva",
+      "winery": "Bodega Norton",
+      "year": 2020,
+      "price": 1500.00,
+      "stock": 100,
+      "colorId": 1,
+      "cepaId": 1,
+      "azucarId": 1,
+      "crianzaId": 1,
+      "elaboracionId": 1,
+      "medidaId": 1,
+      "discountPercent": 0.00
+    }

@@ -1,0 +1,19 @@
+$kind: http-request
+name: Update Wine Discount
+method: PUT
+url: '{{baseUrl}}/vinos/{{wineId}}/descuento'
+order: 7000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{authToken}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "discountPercent": 10.00
+    }
