@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,9 +62,21 @@ public class WineServiceImpl implements WineService { // Implementación del ser
     @Override
     @Transactional(readOnly = true) // Transacción para obtener un vino por su id
     public Wine getWineById(Long id) { // Método para obtener un vino por su id
-        return wineRepository.findById(id)
+        Wine wine = wineRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vino no encontrado: " + id));
+        if (!isCallerAdmin() && (wine.getStock() == null || wine.getStock() <= 0)) {
+            throw new ResourceNotFoundException("Vino no encontrado: " + id);
+        }
+        return wine;
     } // Método para obtener un vino por su id
+
+    private static boolean isCallerAdmin() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) {
+            return false;
+        }
+        return auth.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
 
     @Override
     @Transactional
