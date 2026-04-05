@@ -1,0 +1,241 @@
+================================================================================
+  DOCUMENTACIÓN DE ENTREGA — REQUISITOS PRINCIPALES
+  Proyecto: demo JWT (Spring Boot + JPA + MySQL + JWT)
+  Paquete base: com.uade.tpo.demo
+================================================================================
+
+Este documento describe, de forma detallada, cómo el proyecto cumple con los
+cuatro puntos habituales de la primera entrega:
+
+  1) Implementación de Web Services (funcionalidades requeridas)
+  2) Implementación de mecanismos de persistencia
+  3) No visualización de productos sin stock
+  4) Registro y login de usuarios
+
+--------------------------------------------------------------------------------
+1. IMPLEMENTACIÓN DE WEB SERVICES (API REST)
+--------------------------------------------------------------------------------
+
+Qué es en este proyecto
+-------------------------
+Los "Web Services" se implementan como una API REST sobre HTTP, usando
+Spring Web (@RestController). No hay SOAP ni vistas server-side: el cliente
+(navegador, Postman, app móvil, otro microservicio) envía JSON y recibe JSON.
+
+Arquitectura en capas
+---------------------
+  • Controladores (REST): reciben la petición HTTP, validan entrada con DTOs
+    y @Valid donde aplica, delegan en servicios y devuelven el cuerpo HTTP
+    adecuado (200, 201, 204, 4xx).
+
+  • Servicios: contienen la lógica de negocio (reglas de pedidos, stock,
+    descuentos, permisos de dominio, etc.).
+
+  • Repositorios: abstraen el acceso a datos (Spring Data JPA).
+
+  • Excepciones globales: RestExceptionHandler traduce errores a respuestas
+    JSON coherentes (validación, recurso no encontrado, integridad, etc.).
+
+Principales grupos de endpoints (rutas base)
+--------------------------------------------
+  Autenticación (JWT):
+    POST /auth/login
+    POST /api/v1/auth/register
+    POST /api/v1/auth/authenticate
+
+  Usuarios:
+    GET/POST /usuarios
+    GET/PUT/DELETE /usuarios/{id}
+    GET /usuarios/{id}/pedidos
+
+  Catálogo y administración de vinos:
+    GET /vinos  (listado paginado y filtros opcionales por query params)
+    GET /vinos/{id}
+    POST /vinos, PUT /vinos/{id}, DELETE /vinos/{id}
+    PUT /vinos/{id}/stock, PUT /vinos/{id}/descuento
+
+  Pedidos, envíos y pagos (e-commerce):
+    GET/POST /pedidos
+    GET/PUT/DELETE /pedidos/{id}
+    POST /pedidos/{id}/envios, POST /pedidos/{id}/pagos
+    CRUD de líneas bajo /pedidos/{pedidoId}/detalles
+
+  Categorías (dominio previo del proyecto):
+    GET/POST bajo /categories (según CategoriesController)
+
+Seguridad en la API
+-------------------
+  • SecurityConfig define qué rutas son públicas (login, registro, lectura
+    de catálogo de vinos y categorías) y cuáles exigen JWT.
+
+  • JwtAuthenticationFilter lee el token Bearer, valida y arma el contexto
+    de seguridad de Spring.
+
+  • @PreAuthorize y componentes como OrderAccess, ShipmentAccess y
+    PaymentAccess restringen operaciones a dueño del recurso o ROLE_ADMIN.
+
+Formato de intercambio
+----------------------
+  Content-Type: application/json en cuerpos de petición y respuestas típicas
+  de la API. Las respuestas de error siguen un esquema común definido en
+  RestExceptionHandler.
+
+Colección Postman
+-----------------
+  En postman/collections/ hay requests YAML de ejemplo alineadas a varios
+  de estos endpoints (auth, vinos, categorías, pedidos).
+
+--------------------------------------------------------------------------------
+2. IMPLEMENTACIÓN DE MECANISMOS DE PERSISTENCIA
+--------------------------------------------------------------------------------
+
+Tecnología
+----------
+  • Spring Data JPA (Jakarta Persistence) como capa de persistencia.
+
+  • Hibernate como proveedor JPA (incluido con spring-boot-starter-data-jpa).
+
+  • Base de datos relacional MySQL (conector mysql-connector-j).
+
+Configuración
+-------------
+  En application.properties (o equivalente) se define:
+    • URL JDBC, usuario y contraseña de MySQL.
+    • spring.jpa.hibernate.ddl-auto (típicamente update en desarrollo) para
+      que el esquema evolucione según las entidades.
+    • Dialecto MySQL 8 y nombre de la base (p. ej. marketplace).
+
+Entidades JPA
+-------------
+  Clases anotadas con @Entity y @Table mapean tablas y columnas. Las relaciones
+  (@ManyToOne, @OneToMany, @OneToOne) modelan usuarios, roles, vinos, pedidos,
+  ítems de pedido, envíos y pagos, además de tablas de catálogo (color, cepa,
+  etc.).
+
+Repositorios
+------------
+  Interfaces que extienden JpaRepository (u otros de Spring Data) permiten:
+    • CRUD sin SQL manual.
+    • Consultas derivadas del nombre del método.
+    • Especificaciones (Specification) para consultas dinámicas; por ejemplo
+      WineSpecification compone predicados Criteria API para el listado de
+      vinos con filtros opcionales.
+
+Transacciones
+-------------
+  Los servicios usan @Transactional en métodos que modifican datos, garantizando
+  consistencia (por ejemplo, actualización de stock al armar un pedido).
+
+--------------------------------------------------------------------------------
+3. NO VISUALIZACIÓN DE PRODUCTOS SIN STOCK
+--------------------------------------------------------------------------------
+
+Requisito
+---------
+  El catálogo visible para clientes no debe mostrar productos (vinos) cuyo
+  stock sea cero o negativo. La administración puede necesitar seguir viendo
+  esos registros para reponer stock o editar.
+
+Implementación — listado (GET /vinos)
+-------------------------------------
+  El método WineSpecification.withFilters construye una Specification<JPA>
+  que SIEMPRE añade la condición:
+
+    stock > 0
+
+  de modo que wineRepository.findAll(spec, pageable) solo devuelve vinos
+  disponibles para el listado público del catálogo, además de los filtros
+  opcionales (nombre, precio, año, color, cepa, etc.).
+
+Implementación — detalle por id (GET /vinos/{id})
+-------------------------------------------------
+  En WineServiceImpl.getWineById:
+    1) Se obtiene el vino por id desde el repositorio.
+    2) Si el llamador NO es administrador (no tiene ROLE_ADMIN en el contexto
+       de seguridad) y el stock es null o <= 0, se lanza la misma excepción
+       de "no encontrado" que si el id no existiera (ResourceNotFoundException),
+       de modo que el cliente no distingue por id agotado vs inexistente.
+    3) Si el llamador es ADMIN, puede ver el vino aunque el stock sea 0,
+       para gestión del catálogo.
+
+Efecto en la práctica
+---------------------
+  • Usuario anónimo o USER: no ve en listado ni en detalle (404) vinos sin
+    stock.
+  • ADMIN autenticado con JWT: puede ver detalle de vinos agotados para
+    operaciones de backoffice (PUT stock, etc.).
+
+Nota
+----
+  Otros flujos internos (p. ej. pedidos) pueden usar WineRepository directamente
+  para validar stock al agregar líneas; la regla de "no visualización" aplica
+  explícitamente a la exposición por la API de catálogo (listado + detalle
+  para no admin).
+
+--------------------------------------------------------------------------------
+4. REGISTRO Y LOGIN DE USUARIOS
+--------------------------------------------------------------------------------
+
+Registro
+--------
+  Hay dos entradas habituales:
+
+  a) POST /api/v1/auth/register
+     Cuerpo JSON tipo RegisterRequest: firstname, lastname, email, password,
+     y opcionalmente role (USER o ADMIN). Si role es null, se asigna USER.
+
+     Flujo:
+       • AuthenticationService.register delega en UserService.register:
+         validación de email único, obtención o creación del Role en base de
+         datos, codificación de contraseña con PasswordEncoder (BCrypt típico
+         en Spring Security), persistencia del User.
+       • Se genera un JWT con JwtService.generateToken(user).
+       • Respuesta: JSON con access_token (nombre de propiedad en JSON:
+         access_token, ver AuthenticationResponse).
+
+  b) POST /usuarios
+     Mismo cuerpo de registro; persiste el usuario y devuelve datos públicos
+     del usuario (sin token). Para obtener JWT después, el cliente debe llamar
+     al login.
+
+Login
+-----
+  • POST /auth/login
+    Cuerpo: AuthenticationRequest (email, password).
+
+  • POST /api/v1/auth/authenticate
+    Mismo comportamiento que login: autentica y devuelve access_token.
+
+  Flujo de authenticate/login:
+    1) AuthenticationManager.authenticate con UsernamePasswordAuthenticationToken:
+       Spring Security valida credenciales contra UserDetailsService /
+       PasswordEncoder.
+    2) Si es correcto, se busca el User por email.
+    3) JwtService genera el token con los claims necesarios (incluyendo rol).
+    4) Respuesta: { "access_token": "..." }.
+
+Uso del token
+-------------
+  Las rutas protegidas esperan cabecera:
+    Authorization: Bearer <access_token>
+
+  JwtAuthenticationFilter valida el token y establece el SecurityContext para
+  que @PreAuthorize y la lógica de negocio conozcan al usuario autenticado.
+
+--------------------------------------------------------------------------------
+CIERRE
+--------------------------------------------------------------------------------
+
+Los cuatro ítems se cubren de la siguiente manera en código:
+
+  • Web Services: capa REST completa con DTOs, seguridad y manejo de errores.
+  • Persistencia: JPA + MySQL + repositorios y transacciones en servicios.
+  • Stock: filtro en WineSpecification + regla en getWineById para no admin.
+  • Registro/login: UserService + AuthenticationService + JwtService +
+    controladores /auth y /api/v1/auth.
+
+Para más detalle por capa, ver también en docs/:
+  01-entidades.txt, 02-repositorios.txt, 03-servicios.txt,
+  04-controladores.txt, 05-seguridad-y-excepciones.txt
+
+================================================================================
