@@ -1,0 +1,236 @@
+================================================================================
+  JWT EN EL PROYECTO — USO E IMPLEMENTACIÓN
+================================================================================
+
+Este archivo explica qué es el JWT en esta aplicación, cómo está implementado
+en código y cómo debe usarlo un cliente (Postman, front, etc.).
+
+--------------------------------------------------------------------------------
+1. QUÉ ES JWT AQUÍ Y PARA QUÉ SIRVE
+--------------------------------------------------------------------------------
+
+JWT (JSON Web Token) es un string compacto y firmado que el servidor emite
+después de un login o registro exitoso. El cliente lo guarda y lo envía en
+cada petición a rutas protegidas.
+
+En este proyecto el JWT sirve para:
+
+  • Evitar sesiones en servidor (API stateless): no se guarda sesión HTTP en
+    memoria del Tomcat; el token lleva la identidad verificable por firma.
+
+  • Autenticar peticiones: el filtro JWT valida el token y carga al usuario
+    en el SecurityContext de Spring.
+
+  • Autorizar: con el usuario ya cargado, @PreAuthorize y reglas custom
+    (orderAccess, etc.) pueden comprobar roles ROLE_USER / ROLE_ADMIN.
+
+El servidor NO almacena el token en base de datos: solo valida firma y fecha
+de expiración. Si el token se filtra, hay que revocarlo cambiando la clave
+secreta o usando estrategias avanzadas (lista negra, refresh tokens), que
+este demo no implementa.
+
+--------------------------------------------------------------------------------
+2. DEPENDENCIAS (Maven)
+--------------------------------------------------------------------------------
+
+En pom.xml están las librerías JJWT 0.12.x:
+
+  • jjwt-api
+  • jjwt-impl
+  • jjwt-jackson
+
+Spring Security y spring-boot-starter-security proveen el filtro de cadena,
+AuthenticationManager, PasswordEncoder, etc.
+
+--------------------------------------------------------------------------------
+3. CONFIGURACIÓN (application.properties)
+--------------------------------------------------------------------------------
+
+Propiedades usadas por JwtService:
+
+  application.security.jwt.secretKey
+      Secreto para firmar y verificar el token (HMAC-SHA). Debe ser suficiente-
+      mente largo y aleatorio en producción. En desarrollo suele estar en
+      properties; en producción conviene variable de entorno o secret manager.
+
+  application.security.jwt.expiration
+      Tiempo de vida del token en milisegundos (p. ej. 86400000 = 24 horas).
+
+Nota: en archivos .properties la sintaxis correcta es clave=valor. Si se usa
+      ":" en lugar de "=", Spring puede no enlazar la propiedad y fallar el
+      arranque o la firma.
+
+--------------------------------------------------------------------------------
+4. IMPLEMENTACIÓN — EMISIÓN DEL TOKEN
+--------------------------------------------------------------------------------
+
+Clase principal: com.uade.tpo.demo.controllers.config.JwtService
+
+  generateToken(UserDetails userDetails)
+      Construye el JWT con la librería Jwts:
+        • subject (sub): el "username" de UserDetails — en este proyecto es
+          el email del usuario (User.getUsername() devuelve email).
+        • issuedAt (iat): momento de emisión.
+        • expiration (exp): iat + jwtExpiration (ms).
+        • signWith(getSecretKey()): firma HMAC con la secretKey configurada.
+
+  getSecretKey()
+      Deriva una SecretKey con Keys.hmacShaKeyFor(secretKey.getBytes(UTF_8)).
+
+Quién llama a generateToken
+---------------------------
+  com.uade.tpo.demo.service.AuthenticationService
+
+    • register(RegisterRequest): tras UserService.register (usuario persistido),
+      genera el token con el User (que implementa UserDetails) y devuelve
+      AuthenticationResponse con access_token.
+
+    • authenticate(AuthenticationRequest): tras validar email/contraseña con
+      AuthenticationManager, busca el User y genera el mismo tipo de token.
+
+Controladores que exponen estos flujos
+--------------------------------------
+  • POST /api/v1/auth/register
+  • POST /api/v1/auth/authenticate
+  • POST /auth/login  (AuthController → mismo authenticate)
+
+DTO de respuesta: AuthenticationResponse
+  Campo Java: accessToken
+  JSON serializado: "access_token" (@JsonProperty)
+
+--------------------------------------------------------------------------------
+5. IMPLEMENTACIÓN — LOGIN (VALIDACIÓN DE CONTRASEÑA)
+--------------------------------------------------------------------------------
+
+El JWT no reemplaza la verificación de contraseña en el login: primero Spring
+Security autentica credenciales.
+
+  ApplicationConfig define:
+    • UserDetailsService: busca usuario por email en UserRepository.
+    • PasswordEncoder: BCryptPasswordEncoder.
+    • DaoAuthenticationProvider: enlaza servicio + encoder.
+    • AuthenticationManager: usado en AuthenticationService.authenticate.
+
+  User (entidad) implementa UserDetails:
+    • getUsername() → email
+    • getAuthorities() → List con SimpleGrantedAuthority "ROLE_" + nombre del
+      enum del rol (USER → ROLE_USER, ADMIN → ROLE_ADMIN)
+
+Tras autenticación correcta, recién ahí JwtService genera el token (que en
+esta implementación NO incluye los roles como claims extra: los roles se
+obtienen al volver a cargar el usuario desde BD en cada petición con token).
+
+--------------------------------------------------------------------------------
+6. CÓMO USA EL TOKEN EL CLIENTE
+--------------------------------------------------------------------------------
+
+  1) Obtener el token con POST login o register (ver cuerpo JSON en docs
+     anteriores o en Postman).
+
+  2) Leer el valor de la propiedad JSON: access_token.
+
+  3) En cada request a rutas protegidas, enviar cabecera:
+
+       Authorization: Bearer <access_token>
+
+     Es importante el prefijo "Bearer " (espacio incluido) porque el filtro
+     lo espera así.
+
+  4) No enviar el token en URL ni en cookies sin protección HttpOnly/CSRF
+     según el tipo de app; para API REST típica, Bearer en header es lo usual.
+
+--------------------------------------------------------------------------------
+7. IMPLEMENTACIÓN — VALIDACIÓN EN CADA PETICIÓN
+--------------------------------------------------------------------------------
+
+Clase: com.uade.tpo.demo.controllers.config.JwtAuthenticationFilter
+        (extiende OncePerRequestFilter)
+
+Flujo doFilterInternal:
+
+  1) Lee Authorization. Si no hay header o no empieza con "Bearer ", delega
+     al resto de la cadena sin autenticar (rutas públicas siguen funcionando).
+
+  2) Extrae el JWT (substring después de "Bearer ").
+
+  3) jwtService.extractUsername(jwt) → subject = email.
+
+  4) Si hay email y aún no hay Authentication en SecurityContext:
+        • userDetailsService.loadUserByUsername(email) → carga User desde BD
+          con roles actualizados.
+        • jwtService.isTokenValid(jwt, userDetails):
+            - subject del token coincide con userDetails.getUsername()
+            - y el token no está expirado (extractClaim expiration vs ahora).
+
+  5) Si es válido, crea UsernamePasswordAuthenticationToken con userDetails
+     y authorities, y lo setea en SecurityContextHolder.
+
+  6) filterChain.doFilter → sigue el DispatcherServlet y los @PreAuthorize.
+
+Encadenamiento en SecurityConfig
+--------------------------------
+  • JwtAuthenticationFilter se registra ANTES de
+    UsernamePasswordAuthenticationFilter.
+
+  • sessionManagement: STATELESS (sin sesión HTTP).
+
+  • exceptionHandling:
+        authenticationEntryPoint → JwtAuthenticationEntryPoint (401 JSON)
+        accessDeniedHandler      → JwtAccessDeniedHandler (403 JSON)
+
+Rutas públicas (sin token) están definidas con requestMatchers en
+SecurityConfig (login, registro, GET vinos, etc.); el resto exige autenticación
+válida o devuelve 401.
+
+--------------------------------------------------------------------------------
+8. SEGURIDAD Y ERRORES JSON
+--------------------------------------------------------------------------------
+
+JwtAuthenticationEntryPoint (401)
+  Se invoca cuando la petición a una ruta protegida no está autenticada
+  (sin token, token inválido o expirado que impide establecer autenticación).
+  Respuesta JSON aproximada:
+    { "error": "Credenciales ausentes o token inválido", "code": "UNAUTHORIZED" }
+
+JwtAccessDeniedHandler (403)
+  Usuario autenticado pero sin permiso (@PreAuthorize fallido, etc.):
+    { "error": "No tenés permiso para acceder a este recurso", "code": "FORBIDDEN" }
+
+--------------------------------------------------------------------------------
+9. AUTORIZACIÓN CON EL CONTEXTO YA CARGADO
+--------------------------------------------------------------------------------
+
+Con el filtro JWT, el principal en muchos casos es UserDetails (la entidad User).
+Por eso en controladores/servicios se puede usar:
+
+  • @PreAuthorize("hasRole('ADMIN')")
+  • @PreAuthorize("principal.id == #id")
+  • SecurityUtils.currentUser() donde se necesite la entidad User en lógica
+    de negocio.
+
+Los roles en token vs BD: como el token solo lleva subject (email) en esta
+implementación, los roles efectivos son los que tiene el usuario al momento
+de la petición (recargados desde BD en loadUserByUsername). Un cambio de rol
+en BD se refleja en la siguiente request con el mismo token.
+
+--------------------------------------------------------------------------------
+10. RESUMEN DE ARCHIVOS CLAVE
+--------------------------------------------------------------------------------
+
+  JwtService.java              Firma, parseo, validación de expiración/subject
+  JwtAuthenticationFilter.java  Lectura Bearer, validación, SecurityContext
+  SecurityConfig.java          Cadena de filtros, rutas públicas, stateless
+  ApplicationConfig.java       UserDetailsService, BCrypt, AuthenticationProvider
+  AuthenticationService.java Emisión de JWT tras register/authenticate
+  User.java                    UserDetails + authorities ROLE_*
+  JwtAuthenticationEntryPoint.java   Respuesta 401 JSON
+  JwtAccessDeniedHandler.java        Respuesta 403 JSON
+
+--------------------------------------------------------------------------------
+11. REFERENCIAS EN docs/
+--------------------------------------------------------------------------------
+
+  05-seguridad-y-excepciones.txt — visión integrada seguridad + excepciones
+  06-entrega-webservices-persistencia-stock-auth.txt — registro/login y API
+
+================================================================================

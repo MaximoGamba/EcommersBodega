@@ -24,6 +24,14 @@ Archivos incluidos:
   05-seguridad-y-excepciones.txt
       JWT, SecurityConfig, manejo global de errores y respuestas 401/403.
 
+  06-entrega-webservices-persistencia-stock-auth.txt
+      Texto de entrega: Web Services, persistencia, stock en catálogo,
+      registro y login (JWT).
+
+  07-jwt-uso-e-implementacion.txt
+      JWT: configuración, emisión, cabecera Bearer, filtro, 401/403 y archivos
+      involucrados.
+
 Paquete base del código: com.uade.tpo.demo
 
 ================================================================================
