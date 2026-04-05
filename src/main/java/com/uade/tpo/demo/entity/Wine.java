@@ -65,4 +65,8 @@ public class Wine {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "medida_id", nullable = false)
     private Medida medida;
+
+    /** Porcentaje de descuento sobre el precio de lista (0–100). */
+    @Column(precision = 5, scale = 2)
+    private BigDecimal discountPercent;
 }

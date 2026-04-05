@@ -9,10 +9,11 @@ import org.springframework.data.domain.PageRequest;
 import com.uade.tpo.demo.entity.Category;
 import com.uade.tpo.demo.exceptions.CategoryDuplicateException;
 
-public interface CategoryService {
-    public Page<Category> getCategories(PageRequest pageRequest);
+public interface CategoryService { // Servicio para categorías
+    public Page<Category> getCategories(PageRequest pageRequest); // Método para obtener todas las categorías
 
-    public Optional<Category> getCategoryById(Long categoryId);
+    public Optional<Category> getCategoryById(Long categoryId); // Método para obtener una categoría por su id
 
-    public Category createCategory(String description) throws CategoryDuplicateException;
+    public Category createCategory(String description) throws CategoryDuplicateException; // Método para crear una
+                                                                                          // categoría
 }

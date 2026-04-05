@@ -1,0 +1,100 @@
+================================================================================
+  CAPA DE SERVICIOS (lógica de negocio)
+  Paquete: com.uade.tpo.demo.service
+  DTOs internos: com.uade.tpo.demo.service.payload
+================================================================================
+
+Patrón: interfaz + clase *Impl, inyección con @Autowired en los implementadores
+(excepto AuthenticationService, también con @Autowired). Transacciones con
+@Transactional donde corresponde.
+
+--------------------------------------------------------------------------------
+1. AuthenticationService
+--------------------------------------------------------------------------------
+
+  - authenticate: valida credenciales con AuthenticationManager, carga el User
+    y genera JWT vía JwtService.
+  - register: delega el alta de usuario en UserService.register y devuelve el
+    token (compatibilidad con /api/v1/auth/register).
+
+--------------------------------------------------------------------------------
+2. UserService / UserServiceImpl
+--------------------------------------------------------------------------------
+
+  - getUsers, getUserById
+  - register(RegisterRequest): email único, asignación de rol (por defecto USER
+    o el indicado), password con PasswordEncoder.
+  - updateUser(Long id, UserUpdateInput): actualización parcial de datos y
+    opcionalmente contraseña.
+  - deleteUser(Long id)
+  - Lanza BadRequestException / ResourceNotFoundException según reglas.
+
+--------------------------------------------------------------------------------
+3. WineService / WineServiceImpl
+--------------------------------------------------------------------------------
+
+  - searchWines(...): filtros + Pageable usando WineSpecification.
+  - getWineById, createWine, updateWine, deleteWine
+  - updateStock(Long id, int stock)
+  - updateDiscount(Long id, BigDecimal): valida rango 0–100.
+  - createWine valida datos obligatorios y FKs de clasificación.
+  - Usa getReferenceById de los repositorios de catálogo para asociar entidades.
+
+--------------------------------------------------------------------------------
+4. OrderService / OrderServiceImpl
+--------------------------------------------------------------------------------
+
+  Pedidos y detalle (líneas):
+  - getOrders, getOrderById, getOrdersByUserId
+  - createOrder(actingUserId, isAdmin, PedidoCreateInput): resuelve el dueño
+    (usuario autenticado o userId si es admin), crea pedido en CREATED, opcional
+    lista de ítems; descuenta stock y calcula total.
+  - updateOrder(Long id, PedidoUpdateInput): estado y/o total (input nullable).
+  - cancelOrder(Long id): devuelve stock de todas las líneas y marca cancelado.
+  - getOrderItems, addOrderItem, updateOrderItem, removeOrderItem
+  - Regla: solo se modifican ítems si el pedido está en CREATED.
+  - Si se agrega el mismo vino otra vez, se fusiona cantidad en la línea
+    existente (merge).
+  - Precio unitario de línea: effectiveUnitPrice(wine) considerando descuento.
+
+--------------------------------------------------------------------------------
+5. ShipmentService / ShipmentServiceImpl
+--------------------------------------------------------------------------------
+
+  - createForOrder(orderId, EnvioCreateInput): un envío por pedido, estado
+    inicial PENDING.
+  - getById, update(Long id, EnvioUpdateInput)
+
+--------------------------------------------------------------------------------
+6. PaymentService / PaymentServiceImpl
+--------------------------------------------------------------------------------
+
+  - createForOrder(orderId, PagoCreateInput): un pago por pedido, estado PENDING.
+  - getById, update(Long id, PagoUpdateInput)
+
+--------------------------------------------------------------------------------
+7. CategoryService / CategoryServiceImpl
+--------------------------------------------------------------------------------
+
+  - Paginación de categorías, get por id, create con validación de duplicado
+    (CategoryDuplicateException).
+
+--------------------------------------------------------------------------------
+Payloads (service.payload) — objetos de entrada a servicios
+--------------------------------------------------------------------------------
+
+  - UserUpdateInput
+  - WineUpsertInput
+  - PedidoCreateInput, PedidoUpdateInput, OrderLineInput
+  - EnvioCreateInput, EnvioUpdateInput
+  - PagoCreateInput, PagoUpdateInput
+
+================================================================================
+Excepciones de dominio usadas por los servicios
+================================================================================
+
+  - ResourceNotFoundException
+  - BadRequestException
+  - CategoryDuplicateException (solo categorías)
+
+================================================================================

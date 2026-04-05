@@ -8,7 +8,8 @@ import org.springframework.stereotype.Repository;
 import com.uade.tpo.demo.entity.Role;
 import com.uade.tpo.demo.entity.RoleName;
 
-@Repository
-public interface RoleRepository extends JpaRepository<Role, Long> {
-    Optional<Role> findByName(RoleName name);
+@Repository // Indica que la clase es un repositorio
+public interface RoleRepository extends JpaRepository<Role, Long> { // Extiende de JpaRepository para que tenga los
+                                                                    // métodos de CRUD
+    Optional<Role> findByName(RoleName name); // Busca un rol por su nombre
 }

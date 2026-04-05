@@ -1,0 +1,75 @@
+================================================================================
+  CAPA DE REPOSITORIOS (Spring Data JPA)
+  Paquete: com.uade.tpo.demo.repository
+================================================================================
+
+Los repositorios son interfaces que extienden JpaRepository (y en un caso
+JpaSpecificationExecutor) para acceso a datos sin SQL manual salvo consultas
+indicadas.
+
+--------------------------------------------------------------------------------
+Repositorios por entidad
+--------------------------------------------------------------------------------
+
+UserRepository
+  - JpaRepository<User, Long>
+  - Optional<User> findByEmail(String mail)
+
+RoleRepository
+  - JpaRepository<Role, Long>
+  - Optional<Role> findByName(RoleName name)
+
+CategoryRepository
+  - JpaRepository<Category, Long>
+  - @Query JPQL: List<Category> findByDescription(String description)
+
+WineRepository
+  - JpaRepository<Wine, Long>
+  - JpaSpecificationExecutor<Wine>  (filtros dinámicos en búsqueda de vinos)
+
+OrderRepository
+  - JpaRepository<Order, Long>
+  - List<Order> findByUser_Id(Long userId)
+
+OrderItemRepository
+  - JpaRepository<OrderItem, Long>
+  - List<OrderItem> findByOrder_Id(Long orderId)
+  - Optional<OrderItem> findByOrder_IdAndId(Long orderId, Long itemId)
+
+ShipmentRepository
+  - JpaRepository<Shipment, Long>
+  - Optional<Shipment> findByOrder_Id(Long orderId)
+
+PaymentRepository
+  - JpaRepository<Payment, Long>
+  - Optional<Payment> findByOrder_Id(Long orderId)
+
+Repositorios de catálogo (solo JpaRepository + finder por nombre donde aplica)
+  - ColorRepository       → Optional<Color> findByName(String name)
+  - CepaRepository        → Optional<Cepa> findByName(String name)
+  - AzucarRepository      → Optional<Azucar> findByName(String name)
+  - CrianzaRepository     → Optional<Crianza> findByName(String name)
+  - ElaboracionRepository → Optional<Elaboracion> findByName(String name)
+  - MedidaRepository      → Optional<Medida> findByName(String name)
+
+--------------------------------------------------------------------------------
+Especificación de búsqueda (no es un Repository)
+--------------------------------------------------------------------------------
+
+WineSpecification
+  - Clase utilitaria con método estático withFilters(...) que devuelve un
+    Specification<Wine> para filtrar por:
+    nombre (LIKE), rango de precio, año, y IDs de color/cepa/azúcar/crianza/
+    elaboración/medida.
+  - Usada desde WineServiceImpl con wineRepository.findAll(spec, pageable).
+
+================================================================================
+Buenas prácticas aplicadas
+================================================================================
+
+- @Repository en las interfaces (marcado semántico + manejo de excepciones
+  de persistencia de Spring).
+- Nombres de métodos derivados alineados con propiedades JPA (user_id → User_Id
+  en Spring Data).
+
+================================================================================

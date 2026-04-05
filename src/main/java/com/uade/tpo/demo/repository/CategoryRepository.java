@@ -8,9 +8,10 @@ import org.springframework.stereotype.Repository;
 
 import com.uade.tpo.demo.entity.Category;
 
-@Repository
-public interface CategoryRepository extends JpaRepository<Category, Long> {
+@Repository // Indica que la clase es un repositorio
+public interface CategoryRepository extends JpaRepository<Category, Long> { // Extiende de JpaRepository para que tenga
+                                                                            // los métodos de CRUD
 
-    @Query(value = "select c from Category c where c.description = ?1")
-    List<Category> findByDescription(String description);
+    @Query(value = "select c from Category c where c.description = ?1") // Busca una categoría por su descripción
+    List<Category> findByDescription(String description); // Busca una categoría por su descripción
 }
