@@ -60,6 +60,8 @@ public final class WineSpecification { // Clase para filtrar los vinos
             if (medidaId != null) { // Si el id de la medida no es nulo, se filtra por id de la medida
                 predicates.add(cb.equal(root.get("medida").get("id"), medidaId)); // Se filtra por id de la medida
             }
+            // Catálogo: no mostrar productos sin stock
+            predicates.add(cb.greaterThan(root.get("stock"), 0));
             return cb.and(predicates.toArray(Predicate[]::new)); // Se filtra por todas las condiciones
         };
     } // Método para filtrar los vinos
