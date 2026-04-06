@@ -61,7 +61,6 @@ public class UserServiceImpl implements UserService { // Implementación del ser
                 .firstName(request.getFirstname())
                 .lastName(request.getLastname()) // Establece el apellido del usuario
                 .email(request.getEmail()) // Establece el email del usuario
-                .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword())) // Establece la contraseña del usuario
                 .role(role)
                 .build();
