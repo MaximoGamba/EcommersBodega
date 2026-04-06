@@ -49,9 +49,6 @@ public class UserServiceImpl implements UserService { // Implementación del ser
         if (userRepository.findByEmail(request.getEmail()).isPresent()) { // Si el email ya está registrado
             throw new BadRequestException("El email ya está registrado");
         }
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new BadRequestException("El nombre de usuario ya está en uso");
-        }
         RoleName requestedRole = request.getRole() == null ? RoleName.USER : request.getRole(); // Si el rol es nulo
                                                                                                 // establece el rol de
                                                                                                 // usuario
