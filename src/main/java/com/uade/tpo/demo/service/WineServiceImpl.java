@@ -70,34 +70,37 @@ public class WineServiceImpl implements WineService { // Implementación del ser
         return wine;
     } // Método para obtener un vino por su id
 
-    private static boolean isCallerAdmin() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) {
-            return false;
+    private static boolean isCallerAdmin() { // Método para verificar si el usuario es admin
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication(); // Obtiene la autenticación
+        if (auth == null) { // Si la autenticación es nula
+            return false; // Retorna false
         }
-        return auth.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
-    }
+        return auth.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())); // Retorna true si
+                                                                                                    // el usuario es
+                                                                                                    // admin
+    } // Método para verificar si el usuario es admin
 
     @Override
     @Transactional
     public Wine createWine(WineUpsertInput input) { // Método para crear un vino
-        validateCreate(input);
+        validateCreate(input); // Valida la creación del vino
         Wine wine = Wine.builder() // Crea un nuevo vino
-                .name(input.getName())
+                .name(input.getName()) // Establece el nombre del vino
                 .winery(input.getWinery()) // Establece el nombre de la bodega
-                .year(input.getYear())
+                .year(input.getYear()) // Establece el año del vino
                 .price(input.getPrice()) // Establece el precio del vino
                 .stock(input.getStock()) // Establece el stock del vino
-                .color(colorRepository.getReferenceById(input.getColorId()))
+                .color(colorRepository.getReferenceById(input.getColorId())) // Establece el color del vino
                 .cepa(cepaRepository.getReferenceById(input.getCepaId())) // Establece la cepa del vino
                 .azucar(azucarRepository.getReferenceById(input.getAzucarId())) // Establece el azúcar del vino
                 .crianza(crianzaRepository.getReferenceById(input.getCrianzaId())) // Establece la crianza del vino
-                .elaboracion(elaboracionRepository.getReferenceById(input.getElaboracionId()))
-                .medida(medidaRepository.getReferenceById(input.getMedidaId()))
+                .elaboracion(elaboracionRepository.getReferenceById(input.getElaboracionId())) // Establece la
+                                                                                               // elaboración del vino
+                .medida(medidaRepository.getReferenceById(input.getMedidaId())) // Establece la medida del vino
                 .discountPercent(input.getDiscountPercent() != null ? input.getDiscountPercent() : BigDecimal.ZERO)
                 .build();
-        return wineRepository.save(wine);
-    }
+        return wineRepository.save(wine); // Guarda el vino
+    } // Método para crear un vino
 
     @Override
     @Transactional
