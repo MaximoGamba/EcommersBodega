@@ -40,6 +40,14 @@ Archivos incluidos:
       Diagnóstico técnico del 401 en create category y hallazgo de esquema
       en tabla categories.
 
+  10-diagnostico-create-vino-data-integrity.txt
+      Causa raíz de DATA_INTEGRITY en POST /vinos (FK de clasificación,
+      especialmente azucar_id).
+
+  11-diagnostico-token-create-vino.txt
+      Prueba local de JWT en create vino: el token valida, falla la
+      serialización de entidades LAZY en la respuesta.
+
 Paquete base del código: com.uade.tpo.demo
 
 ================================================================================

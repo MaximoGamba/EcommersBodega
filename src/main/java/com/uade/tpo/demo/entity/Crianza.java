@@ -1,5 +1,7 @@
 package com.uade.tpo.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -16,6 +18,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor // Genera el constructor sin argumentos
 @AllArgsConstructor // Genera el constructor con todos los argumentos
 @Entity // Indica que la clase es una entidad
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 @Table(name = "crianzas")
 public class Crianza {
     @Id // Indica que el campo es la clave primaria
@@ -26,3 +29,6 @@ public class Crianza {
     @Column(nullable = false, unique = true, length = 80)
     private String name;
 }
+
+
+

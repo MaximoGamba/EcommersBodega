@@ -123,9 +123,10 @@ public class RestExceptionHandler {
                 "UNAUTHORIZED");
     }
 
-    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ExceptionHandler(DataIntegrityViolationException.class) // Manejador de excepción para violación de integridad de
+                                                             // datos
     public ResponseEntity<Map<String, Object>> dataIntegrity(DataIntegrityViolationException ex) {
-        log.warn("Violación de integridad de datos", ex);
+        log.warn("Violación de integridad de datos", ex); // Registra la excepción
         return body(HttpStatus.CONFLICT,
                 "No se pudo completar la operación por una restricción de base de datos (por ejemplo, valor duplicado)",
                 "DATA_INTEGRITY");
