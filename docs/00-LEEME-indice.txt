@@ -48,6 +48,10 @@ Archivos incluidos:
       Prueba local de JWT en create vino: el token valida, falla la
       serialización de entidades LAZY en la respuesta.
 
+  12-diagnostico-user-puede-crear-categoria.txt
+      Causa de autorización: un USER autenticado puede crear categorías por
+      falta de restricción de rol en el endpoint POST /categories.
+
 Paquete base del código: com.uade.tpo.demo
 
 ================================================================================

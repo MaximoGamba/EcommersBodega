@@ -1,0 +1,73 @@
+================================================================================
+  DIAGNÓSTICO — POR QUÉ UN USER PUEDE CREAR CATEGORÍAS
+  Fecha: 2026-04-08
+================================================================================
+
+Problema reportado
+------------------
+Un usuario con rol `USER` puede ejecutar `POST /categories` y crear categorías.
+Esperado: que solo `ADMIN` pueda hacerlo (o al menos recibir excepción 403).
+
+
+Análisis de configuración de seguridad
+--------------------------------------
+1) Seguridad global por rutas (`SecurityConfig`)
+   - Se permite en público:
+       GET /categories
+       GET /categories/**
+   - Todo lo demás queda en:
+       .anyRequest().authenticated()
+
+   Esto significa que `POST /categories` NO es público, pero solo exige
+   "estar autenticado". No exige rol ADMIN.
+
+2) Seguridad por método (`@EnableMethodSecurity`)
+   - Está activada en `DemoApplication`.
+   - Para que haga efecto en un endpoint, ese método debe tener
+     `@PreAuthorize(...)` (u otra anotación de method security).
+
+3) Controller de categorías (`CategoriesController`)
+   - `createCategory(...)` NO tiene `@PreAuthorize`.
+   - Entonces aplica la regla global: "authenticated".
+   - Resultado: cualquier token válido (USER o ADMIN) puede crear categoría.
+
+
+Causa raíz
+----------
+Falta una restricción de autorización por rol en creación de categorías.
+
+En otras palabras:
+  - autenticación: OK
+  - autorización por rol: INCOMPLETA para `POST /categories`
+
+
+Comportamiento actual vs esperado
+---------------------------------
+Actual:
+  - USER autenticado -> puede `POST /categories` (201 o conflicto, según datos).
+
+Esperado:
+  - USER autenticado -> 403 FORBIDDEN
+  - ADMIN autenticado -> permitido
+
+
+Cómo debería quedar
+-------------------
+Agregar restricción de rol ADMIN en `createCategory(...)`, por ejemplo:
+
+  @PreAuthorize("hasRole('ADMIN')")
+  @PostMapping
+  public ResponseEntity<Object> createCategory(...)
+
+Opcionalmente también restringir updates/deletes si se implementan en el futuro.
+
+
+Qué excepción/mensaje se vería tras corregir
+--------------------------------------------
+Para un USER intentando crear categoría:
+  - HTTP 403
+  - body JSON desde `JwtAccessDeniedHandler` / `RestExceptionHandler`:
+      code: "FORBIDDEN"
+      error: "No tenés permiso para acceder a este recurso"
+
+================================================================================
