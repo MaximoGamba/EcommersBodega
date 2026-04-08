@@ -32,6 +32,14 @@ Archivos incluidos:
       JWT: configuración, emisión, cabecera Bearer, filtro, 401/403 y archivos
       involucrados.
 
+  08-prueba-local-auth-categoria.txt
+      Evidencia de prueba local: register/authenticate/login + intento de
+      create category con token JWT.
+
+  09-diagnostico-jwt-categories.txt
+      Diagnóstico técnico del 401 en create category y hallazgo de esquema
+      en tabla categories.
+
 Paquete base del código: com.uade.tpo.demo
 
 ================================================================================

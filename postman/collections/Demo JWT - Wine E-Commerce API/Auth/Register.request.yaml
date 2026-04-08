@@ -1,18 +1,17 @@
 $kind: http-request
 name: Register
 method: POST
-url: '{{baseUrl}}/api/v1/auth/register'
+url: "{{bashttp://localhost:4002eUrl}}/api/v1/auth/register"
 order: 1000
 headers:
-  - key: Content-Type
-    value: application/json
+  Content-Type: application/json
 body:
   type: json
   content: |-
     {
-      "firstname": "John",
-      "lastname": "Doe",
-      "email": "john.doe@example.com",
-      "password": "password123",
-      "role": "USER"
+      "firstname": "Juan",
+      "lastname": "ka",
+      "email": "maximogamba@hotmail.com",
+      "password": "123456",
+      "role": "ADMIN"
     }
