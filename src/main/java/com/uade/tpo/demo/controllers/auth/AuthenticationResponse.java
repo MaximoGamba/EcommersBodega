@@ -16,3 +16,6 @@ public class AuthenticationResponse {
     @JsonProperty("access_token")
     private String accessToken;
 }
+
+//dto de login o registro de salida, me lo devuelve postman
+

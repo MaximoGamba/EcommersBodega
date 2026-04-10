@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.uade.tpo.demo.service.AuthenticationService;
 
 import lombok.RequiredArgsConstructor;
-
+//donde hago el login y me devuelve el token en postman, no se usa 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/auth") //esta url es para todos los endopoints que esten aca 
 @RequiredArgsConstructor
 public class AuthController {
 

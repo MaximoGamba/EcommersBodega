@@ -11,7 +11,7 @@ import com.uade.tpo.demo.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/v1/auth") //esto es para registrarme 
 @RequiredArgsConstructor
 public class AuthenticationController {
 
@@ -23,7 +23,7 @@ public class AuthenticationController {
         return ResponseEntity.ok(service.register(request));
     }
 
-    @PostMapping("/authenticate")
+    @PostMapping("/authenticate") //es lo mismo q login 
     public ResponseEntity<AuthenticationResponse> authenticate(
             @RequestBody AuthenticationRequest request) {
         return ResponseEntity.ok(service.authenticate(request));
