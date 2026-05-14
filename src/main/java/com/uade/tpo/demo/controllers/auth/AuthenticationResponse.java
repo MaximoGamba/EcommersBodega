@@ -22,5 +22,4 @@ public class AuthenticationResponse {
     private String role;
 }
 
-//dto de login o registro de salida, me lo devuelve postman
-
+// DTO returned after login or registration

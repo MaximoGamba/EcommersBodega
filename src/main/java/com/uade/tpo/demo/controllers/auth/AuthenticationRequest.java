@@ -15,4 +15,4 @@ public class AuthenticationRequest {
     private String password; 
 }
 
-//dto de login 
+// DTO for login request
