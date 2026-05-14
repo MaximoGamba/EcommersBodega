@@ -8,16 +8,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Builder 
-@AllArgsConstructor 
-@NoArgsConstructor 
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class RegisterRequest {
 
-public class RegisterRequest { 
-
-    private String firstname; 
-    private String lastname; 
-    private String email; 
-    private String username; 
-    private String password; 
-    private RoleName role; 
+    private String firstname;
+    private String lastname;
+    private String email;
+    private String username;
+    private String password;
+    private RoleName role;
 }

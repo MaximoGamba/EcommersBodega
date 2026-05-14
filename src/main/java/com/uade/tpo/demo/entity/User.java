@@ -25,16 +25,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data 
-@Builder 
-@NoArgsConstructor 
-@AllArgsConstructor 
-@Entity 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 @Table(name = "users")
-public class User implements UserDetails { 
-    @Id 
-    @GeneratedValue(strategy = GenerationType.IDENTITY) 
+public class User implements UserDetails {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, unique = true)
