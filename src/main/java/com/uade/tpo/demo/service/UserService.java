@@ -6,15 +6,17 @@ import com.uade.tpo.demo.controllers.auth.RegisterRequest;
 import com.uade.tpo.demo.entity.User;
 import com.uade.tpo.demo.service.payload.UserUpdateInput;
 
-public interface UserService { // Servicio para usuarios
+public interface UserService { 
 
-    List<User> getUsers(); // Método para obtener todos los usuarios
+    List<User> getUsers(); 
 
-    User getUserById(Long id); // Método para obtener un usuario por su id
+    User getUserById(Long id); 
 
-    User register(RegisterRequest request); // Método para registrar un usuario
+    User register(RegisterRequest request); 
 
-    User updateUser(Long id, UserUpdateInput input); // Método para actualizar un usuario
+    User updateUser(Long id, UserUpdateInput input); 
 
-    void deleteUser(Long id); // Método para eliminar un usuario
+    void deleteUser(Long id); 
+
+    void activateUser(Long id); 
 }

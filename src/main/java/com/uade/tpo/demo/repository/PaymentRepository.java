@@ -7,9 +7,8 @@ import org.springframework.stereotype.Repository;
 
 import com.uade.tpo.demo.entity.Payment;
 
-@Repository // Indica que la clase es un repositorio
-public interface PaymentRepository extends JpaRepository<Payment, Long> { // Extiende de JpaRepository para que tenga
-                                                                          // los métodos de CRUD
+@Repository 
+public interface PaymentRepository extends JpaRepository<Payment, Long> { 
 
-    Optional<Payment> findByOrder_Id(Long orderId); // Busca un pago por el id del pedido
+    Optional<Payment> findByOrder_Id(Long orderId); 
 }

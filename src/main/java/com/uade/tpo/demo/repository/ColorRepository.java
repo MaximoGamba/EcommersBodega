@@ -7,9 +7,8 @@ import org.springframework.stereotype.Repository;
 
 import com.uade.tpo.demo.entity.Color;
 
-@Repository // Indica que la clase es un repositorio
-public interface ColorRepository extends JpaRepository<Color, Long> { // Extiende de JpaRepository para que tenga los
-                                                                      // métodos de CRUD
+@Repository 
+public interface ColorRepository extends JpaRepository<Color, Long> { 
 
-    Optional<Color> findByName(String name); // Busca un color por su nombre
+    Optional<Color> findByName(String name); 
 }

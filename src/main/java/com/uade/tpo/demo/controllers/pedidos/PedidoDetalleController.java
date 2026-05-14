@@ -1,10 +1,10 @@
 package com.uade.tpo.demo.controllers.pedidos;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -53,10 +53,10 @@ public class PedidoDetalleController {
         return orderService.updateOrderItem(pedidoId, idDetalle, request.getQuantity());
     }
 
-    @DeleteMapping("/{idDetalle}")
+    @PutMapping("/{idDetalle}/quitar")
     @PreAuthorize("@orderAccess.canAccess(authentication, #pedidoId)")
-    public ResponseEntity<Void> quitar(@PathVariable Long pedidoId, @PathVariable Long idDetalle) {
+    public ResponseEntity<Map<String, String>> quitar(@PathVariable Long pedidoId, @PathVariable Long idDetalle) {
         orderService.removeOrderItem(pedidoId, idDetalle);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(Map.of("message", "Detalle eliminado del pedido correctamente"));
     }
 }

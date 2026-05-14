@@ -1,10 +1,10 @@
 package com.uade.tpo.demo.controllers.pedidos;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,6 +20,7 @@ import com.uade.tpo.demo.security.SecurityUtils;
 import com.uade.tpo.demo.service.OrderService;
 import com.uade.tpo.demo.service.PaymentService;
 import com.uade.tpo.demo.service.ShipmentService;
+import com.uade.tpo.demo.exceptions.ResourceNotFoundException;
 import com.uade.tpo.demo.service.payload.EnvioCreateInput;
 import com.uade.tpo.demo.service.payload.PagoCreateInput;
 import com.uade.tpo.demo.service.payload.PedidoCreateInput;
@@ -37,48 +38,64 @@ public class PedidoController {
     private final PaymentService paymentService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")  
     public List<Order> listarTodos() {
         return orderService.getOrders();
     }
 
-    @GetMapping("/{id}")
-    @PreAuthorize("@orderAccess.canAccess(authentication, #id)")
+    @GetMapping("/{id}") 
+    @PreAuthorize("@orderAccess.canAccess(authentication, #id)") 
     public Order obtener(@PathVariable Long id) {
         return orderService.getOrderById(id);
     }
 
     @PostMapping
-    public Order crear(@RequestBody(required = false) PedidoCreateInput input) {
+    public Order crear(@RequestBody(required = false) PedidoCreateInput input) { 
         var user = SecurityUtils.currentUser();
         boolean admin = SecurityUtils.isAdmin(user);
         return orderService.createOrder(user.getId(), admin, input != null ? input : new PedidoCreateInput());
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{id}") 
     @PreAuthorize("@orderAccess.canAccess(authentication, #id)")
     public Order actualizar(@PathVariable Long id, @RequestBody(required = false) PedidoUpdateInput input) {
         return orderService.updateOrder(id, input);
     }
 
-    @DeleteMapping("/{id}")
+    @PutMapping("/{id}/cancelar")
     @PreAuthorize("@orderAccess.canAccess(authentication, #id)")
-    public ResponseEntity<Void> cancelar(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> cancelar(@PathVariable Long id) {
         orderService.cancelOrder(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(Map.of("message", "Pedido cancelado correctamente"));
     }
 
-    @PostMapping("/{id}/envios")
+    @PostMapping("/{id}/envios") 
     @PreAuthorize("@orderAccess.canAccess(authentication, #id)")
     public ResponseEntity<Shipment> crearEnvio(@PathVariable Long id, @RequestBody EnvioCreateInput input) {
         Shipment shipment = shipmentService.createForOrder(id, input);
         return ResponseEntity.ok(shipment);
     }
 
-    @PostMapping("/{id}/pagos")
+    @GetMapping("/{id}/envios")
+    @PreAuthorize("@orderAccess.canAccess(authentication, #id)")
+    public ResponseEntity<Shipment> obtenerEnvio(@PathVariable Long id) {
+        Shipment shipment = shipmentService.getByOrderId(id)
+                .orElseThrow(() -> new ResourceNotFoundException("El pedido " + id + " no tiene un envío registrado"));
+        return ResponseEntity.ok(shipment);
+    }
+
+    @PostMapping("/{id}/pagos") 
     @PreAuthorize("@orderAccess.canAccess(authentication, #id)")
     public ResponseEntity<Payment> registrarPago(@PathVariable Long id, @RequestBody PagoCreateInput input) {
         Payment payment = paymentService.createForOrder(id, input);
+        return ResponseEntity.ok(payment);
+    }
+
+    @GetMapping("/{id}/pagos")
+    @PreAuthorize("@orderAccess.canAccess(authentication, #id)")
+    public ResponseEntity<Payment> obtenerPago(@PathVariable Long id) {
+        Payment payment = paymentService.getByOrderId(id)
+                .orElseThrow(() -> new ResourceNotFoundException("El pedido " + id + " no tiene un pago registrado"));
         return ResponseEntity.ok(payment);
     }
 }

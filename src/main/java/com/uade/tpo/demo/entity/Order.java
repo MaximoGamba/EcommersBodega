@@ -21,8 +21,8 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 
-@Entity // Indica que la clase es una entidad
-@Data // Genera los getters y setters
+@Entity 
+@Data 
 @Table(name = "orders")
 public class Order {
     @Id
@@ -37,7 +37,7 @@ public class Order {
     private LocalDateTime createdAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false, columnDefinition = "VARCHAR(30)")
     private OrderStatus status;
 
     @Column(nullable = false, precision = 12, scale = 2)

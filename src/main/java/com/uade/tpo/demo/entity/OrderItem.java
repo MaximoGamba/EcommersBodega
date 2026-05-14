@@ -2,6 +2,8 @@ package com.uade.tpo.demo.entity;
 
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -16,26 +18,27 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data // Genera los getters y setters
-@Builder // Genera el builder para la clase
-@NoArgsConstructor // Genera el constructor sin argumentos
-@AllArgsConstructor // Genera el constructor con todos los argumentos
-@Entity // Indica que la clase es una entidad
+@Data 
+@Builder 
+@NoArgsConstructor 
+@AllArgsConstructor 
+@Entity 
 @Table(name = "order_items")
 
 public class OrderItem {
-    @Id // Indica que el campo es la clave primaria
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Genera el id de la entidad
+    @Id 
+    @GeneratedValue(strategy = GenerationType.IDENTITY) 
 
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false) // Indica que la relación es many to one
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY, optional = false) 
     @JoinColumn(name = "order_id", nullable = false)
-    private Order order; // Referencia a la orden
+    private Order order; 
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false) // Indica que la relación es many to one
+    @ManyToOne(fetch = FetchType.LAZY, optional = false) 
     @JoinColumn(name = "wine_id", nullable = false)
-    private Wine wine; // Referencia al vino
+    private Wine wine; 
 
     @Column(nullable = false)
     private Integer quantity;

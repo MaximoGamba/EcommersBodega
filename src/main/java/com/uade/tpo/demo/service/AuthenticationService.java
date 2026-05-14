@@ -13,39 +13,48 @@ import com.uade.tpo.demo.entity.User;
 import com.uade.tpo.demo.repository.UserRepository;
 
 @Service
-public class AuthenticationService { // Servicio para autenticar usuarios
+public class AuthenticationService {
 
         @Autowired
-        private UserRepository userRepository; // Repositorio para usuarios
+        private UserRepository userRepository;
 
         @Autowired
-        private JwtService jwtService; // Servicio para generar tokens JWT
+        private JwtService jwtService;
 
         @Autowired
-        private AuthenticationManager authenticationManager; // Gestor de autenticación
+        private AuthenticationManager authenticationManager;
 
         @Autowired
-        private UserService userService; // Servicio para usuarios
+        private UserService userService;
 
-        public AuthenticationResponse register(RegisterRequest request) { // Método para registrar un usuario
-                User user = userService.register(request); // Registra un usuario
-                String jwtToken = jwtService.generateToken(user); // Genera un token JWT
+        public AuthenticationResponse register(RegisterRequest request) {
+                User user = userService.register(request);
+                user = rotateTokenVersion(user);
+                String jwtToken = jwtService.generateToken(user);
                 return AuthenticationResponse.builder()
-                                .accessToken(jwtToken) // Genera un token JWT
-                                .build(); // Genera un token JWT
+                                .accessToken(jwtToken)
+                                .userId(user.getId())
+                                .role(user.getRole().getName().name())
+                                .build();
         }
 
-        public AuthenticationResponse authenticate(AuthenticationRequest request) { // Método para autenticar un usuario
-                                                                                    // con email y contraseña
-                authenticationManager.authenticate( // Autentica un usuario con email y contraseña
-                                new UsernamePasswordAuthenticationToken(
-                                                request.getEmail(),
-                                                request.getPassword()));
-                User user = userRepository.findByEmail(request.getEmail()) // Busca un usuario por email
-                                .orElseThrow(); // Lanza una excepción si el usuario no existe
-                String jwtToken = jwtService.generateToken(user); // Genera un token JWT
-                return AuthenticationResponse.builder() // Genera un token JWT
-                                .accessToken(jwtToken) // Genera un token JWT
-                                .build(); // Genera un token JWT
+        public AuthenticationResponse authenticate(AuthenticationRequest request) {
+                authenticationManager.authenticate(
+                                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+                User user = userRepository.findByUsernameAndActiveTrue(request.getUsername())
+                                .orElseThrow();
+                user = rotateTokenVersion(user);
+                String jwtToken = jwtService.generateToken(user);
+                return AuthenticationResponse.builder()
+                                .accessToken(jwtToken)
+                                .userId(user.getId())
+                                .role(user.getRole().getName().name())
+                                .build();
+        }
+
+        private User rotateTokenVersion(User user) {
+                int currentVersion = user.getTokenVersion() == null ? 0 : user.getTokenVersion();
+                user.setTokenVersion(currentVersion + 1);
+                return userRepository.save(user);
         }
 }

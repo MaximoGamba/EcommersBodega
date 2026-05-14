@@ -18,4 +18,5 @@ public class VinoRequest {
     private Long elaboracionId;
     private Long medidaId;
     private BigDecimal discountPercent;
+    private String imageUrl;
 }

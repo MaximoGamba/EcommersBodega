@@ -2,6 +2,8 @@ package com.uade.tpo.demo.entity;
 
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -16,11 +18,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data // Genera los getters y setters
-@Builder // Genera el builder para la clase
-@NoArgsConstructor // Genera el constructor sin argumentos
-@AllArgsConstructor // Genera el constructor con todos los argumentos
-@Entity // Indica que la clase es una entidad
+@Data 
+@Builder 
+@NoArgsConstructor 
+@AllArgsConstructor 
+@Entity 
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 @Table(name = "wines")
 public class Wine {
     @Id
@@ -66,7 +69,14 @@ public class Wine {
     @JoinColumn(name = "medida_id", nullable = false)
     private Medida medida;
 
-    /** Porcentaje de descuento sobre el precio de lista (0–100). */
+    
     @Column(precision = 5, scale = 2)
     private BigDecimal discountPercent;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean active = true;
+
+    @Column(length = 500)
+    private String imageUrl;
 }

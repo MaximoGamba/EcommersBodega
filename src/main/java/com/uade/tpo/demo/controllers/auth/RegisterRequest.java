@@ -20,4 +20,3 @@ public class RegisterRequest {
     private String password;
     private RoleName role;
 }
-//dto de registro, es lo q cargo 

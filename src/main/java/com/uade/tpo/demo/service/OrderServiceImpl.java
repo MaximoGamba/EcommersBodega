@@ -27,169 +27,156 @@ import com.uade.tpo.demo.service.payload.PedidoCreateInput;
 import com.uade.tpo.demo.service.payload.PedidoUpdateInput;
 
 @Service
-public class OrderServiceImpl implements OrderService { // Implementación del servicio para pedidos
+public class OrderServiceImpl implements OrderService { 
 
     @Autowired
-    private OrderRepository orderRepository; // Repositorio para pedidos
+    private OrderRepository orderRepository; 
 
     @Autowired
-    private OrderItemRepository orderItemRepository; // Repositorio para items de pedidos
+    private OrderItemRepository orderItemRepository; 
 
     @Autowired
-    private UserRepository userRepository; // Repositorio para usuarios
+    private UserRepository userRepository; 
 
     @Autowired
-    private WineRepository wineRepository; // Repositorio para vinos
+    private WineRepository wineRepository; 
 
     @Override
     @Transactional(readOnly = true)
-    public List<Order> getOrders() { // Método para obtener todos los pedidos
+    public List<Order> getOrders() { 
         return orderRepository.findAll();
-    } // Método para obtener todos los pedidos
+    } 
 
     @Override
-    @Transactional(readOnly = true) // Método para obtener un pedido por su id
-    public Order getOrderById(Long id) { // Método para obtener un pedido por su id
-        return orderRepository.findById(id) // Busca un pedido por su id
-                .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado: " + id)); // Lanza una excepción
-                                                                                                  // si el pedido no
-                                                                                                  // existe
-    } // Método para obtener un pedido por su id
+    @Transactional(readOnly = true) 
+    public Order getOrderById(Long id) { 
+        return orderRepository.findById(id) 
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado: " + id)); 
+    } 
 
     @Override
-    @Transactional(readOnly = true) // Método para obtener todos los pedidos de un usuario por su id
+    @Transactional(readOnly = true) 
     public List<Order> getOrdersByUserId(Long userId) {
         return orderRepository.findByUser_Id(userId);
-    } // Método para obtener todos los pedidos de un usuario por su id
+    } 
 
     @Override
-    @Transactional // Método para crear un pedido
-    public Order createOrder(Long actingUserId, boolean actingUserIsAdmin, PedidoCreateInput input) { // Método para
-                                                                                                      // crear un pedido
+    @Transactional 
+    public Order createOrder(Long actingUserId, boolean actingUserIsAdmin, PedidoCreateInput input) { 
         User owner = resolveOwner(actingUserId, actingUserIsAdmin,
-                input == null ? null : input.getUserId()); // Resuelve el owner del pedido
-        Order order = new Order(); // Crea un nuevo pedido
+                input == null ? null : input.getUserId()); 
+        Order order = new Order(); 
         order.setUser(owner);
-        order.setCreatedAt(LocalDateTime.now()); // Establece la fecha de creación del pedido
-        order.setStatus(OrderStatus.CREATED); // Establece el estado del pedido
+        order.setCreatedAt(LocalDateTime.now()); 
+        order.setStatus(OrderStatus.CREATED); 
         order.setTotal(BigDecimal.ZERO);
-        order.setItems(new ArrayList<>()); // Establece los items del pedido
+        order.setItems(new ArrayList<>()); 
         order = orderRepository.save(order);
-        if (input != null && input.getItems() != null) { // Si hay items en el pedido
-            for (OrderLineInput line : input.getItems()) { // Para cada item en el pedido
-                if (line.getWineId() == null || line.getQuantity() == null || line.getQuantity() <= 0) { // Si el wineId
-                                                                                                         // o la
-                                                                                                         // cantidad es
-                                                                                                         // nula o menor
-                                                                                                         // a 0
+        if (input != null && input.getItems() != null) { 
+            for (OrderLineInput line : input.getItems()) { 
+                if (line.getWineId() == null || line.getQuantity() == null || line.getQuantity() <= 0) { 
                     throw new BadRequestException("Cada ítem requiere wineId y quantity > 0");
                 }
-                addOrMergeItem(order.getId(), line.getWineId(), line.getQuantity()); // Agrega o mergea el item al
-                                                                                     // pedido
+                addOrMergeItem(order.getId(), line.getWineId(), line.getQuantity()); 
             }
-            order = orderRepository.findById(order.getId()).orElseThrow(); // Busca un pedido por su id
+            order = orderRepository.findById(order.getId()).orElseThrow(); 
         }
-        return order; // Retorna el pedido creado
+        return order; 
     }
 
     @Override
     @Transactional
-    public Order updateOrder(Long id, PedidoUpdateInput input) { // Método para actualizar un pedido
-        Order order = getOrderById(id); // Obtiene el pedido por su id
+    public Order updateOrder(Long id, PedidoUpdateInput input) { 
+        Order order = getOrderById(id); 
         if (input != null) {
-            if (input.getStatus() != null) { // Si el estado es nulo
-                order.setStatus(input.getStatus()); // Establece el estado del pedido
+            if (input.getStatus() != null) { 
+                order.setStatus(input.getStatus()); 
             }
-            if (input.getTotal() != null) { // Si el total es nulo
-                order.setTotal(input.getTotal()); // Establece el total del pedido
+            if (input.getTotal() != null) { 
+                order.setTotal(input.getTotal()); 
             }
         }
-        return orderRepository.save(order); // Guarda el pedido
+        return orderRepository.save(order); 
     }
 
     @Override
     @Transactional
-    public void cancelOrder(Long id) { // Método para cancelar un pedido
-        Order order = getOrderById(id); // Obtiene el pedido por su id
-        if (order.getStatus() == OrderStatus.CANCELLED) { // Si el estado del pedido es CANCELLED
-            return; // Retorna
+    public void cancelOrder(Long id) { 
+        Order order = getOrderById(id); 
+        if (order.getStatus() == OrderStatus.CANCELLED) { 
+            return; 
         }
-        restoreStockForOrder(order.getId()); // Restaura el stock del pedido
-        order.setStatus(OrderStatus.CANCELLED); // Establece el estado del pedido
-        orderRepository.save(order); // Guarda el pedido
+        restoreStockForOrder(order.getId()); 
+        order.setStatus(OrderStatus.CANCELLED);
+        orderRepository.save(order); 
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<OrderItem> getOrderItems(Long orderId) {
-        getOrderById(orderId); // Obtiene el pedido por su id
-        return orderItemRepository.findByOrder_Id(orderId); // Busca los items del pedido por su id
-    } // Método para obtener los items de un pedido por su id
+        getOrderById(orderId); 
+        return orderItemRepository.findByOrder_Id(orderId); 
+    } 
 
     @Override
     @Transactional
-    public OrderItem addOrderItem(Long orderId, Long wineId, int quantity) { // Método para agregar un item a un pedido
-        if (quantity <= 0) { // Si la cantidad es menor a 0
-            throw new BadRequestException("La cantidad debe ser mayor a 0"); // Lanza una excepción si la cantidad es
-                                                                             // menor a 0
+    public OrderItem addOrderItem(Long orderId, Long wineId, int quantity) { 
+        if (quantity <= 0) { 
+            throw new BadRequestException("La cantidad debe ser mayor a 0"); 
+                                                                        
         }
-        return addOrMergeItem(orderId, wineId, quantity); // Agrega o mergea el item al pedido
-    } // Método para agregar un item a un pedido
+        return addOrMergeItem(orderId, wineId, quantity); 
+    } 
 
     @Override
     @Transactional
-    public OrderItem updateOrderItem(Long orderId, Long itemId, int quantity) { // Método para actualizar un item de un
-                                                                                // pedido
-        if (quantity <= 0) { // Si la cantidad es menor a 0
-            throw new BadRequestException("La cantidad debe ser mayor a 0"); // Lanza una excepción si la cantidad es
-                                                                             // menor a 0
+    public OrderItem updateOrderItem(Long orderId, Long itemId, int quantity) { 
+        if (quantity <= 0) { 
+            throw new BadRequestException("La cantidad debe ser mayor a 0"); 
+                                                                             
         }
-        Order order = getOrderById(orderId); // Obtiene el pedido por su id
-        assertOrderEditable(order); // Verifica si el pedido es editable
-        OrderItem item = orderItemRepository.findByOrder_IdAndId(orderId, itemId) // Busca el item por su id
+        Order order = getOrderById(orderId); 
+        assertOrderEditable(order); 
+        OrderItem item = orderItemRepository.findByOrder_IdAndId(orderId, itemId) 
                 .orElseThrow(() -> new ResourceNotFoundException("Detalle de pedido no encontrado"));
-        Wine wine = wineRepository.findById(item.getWine().getId()) // Busca el vino por su id
+        Wine wine = wineRepository.findById(item.getWine().getId()) 
                 .orElseThrow(() -> new ResourceNotFoundException("Vino no encontrado"));
-        int oldQty = item.getQuantity(); // Obtiene la cantidad del item
-        int delta = quantity - oldQty; // Calcula la diferencia entre la cantidad nueva y la cantidad anterior
-        if (delta > 0 && wine.getStock() < delta) { // Si la diferencia es mayor a 0 y el stock del vino es menor a la
-                                                    // diferencia
-            throw new BadRequestException("Stock insuficiente para el vino: " + wine.getId()); // Lanza una excepción si
-                                                                                               // el stock del vino es
-                                                                                               // menor a la diferencia
+        int oldQty = item.getQuantity(); 
+        int delta = quantity - oldQty; 
+        if (delta > 0 && wine.getStock() < delta) { 
+            throw new BadRequestException("Stock insuficiente para el vino: " + wine.getId());                                                                                        
         }
-        wine.setStock(wine.getStock() - delta); // Restaura el stock del vino
+        wine.setStock(wine.getStock() - delta); 
         wineRepository.save(wine);
         item.setQuantity(quantity);
         item.setSubtotal(item.getUnitPrice().multiply(BigDecimal.valueOf(quantity))
-                .setScale(2, RoundingMode.HALF_UP)); // Establece el subtotal del item
-        OrderItem saved = orderItemRepository.save(item); // Guarda el item
-        recalcOrderTotal(orderId); // Recalcula el total del pedido
-        return saved; // Retorna el item actualizado
+                .setScale(2, RoundingMode.HALF_UP)); 
+        OrderItem saved = orderItemRepository.save(item); 
+        recalcOrderTotal(orderId); 
+        return saved; 
     }
 
     @Override
     @Transactional
-    public void removeOrderItem(Long orderId, Long itemId) { // Método para eliminar un item de un pedido
-        Order order = getOrderById(orderId); // Obtiene el pedido por su id
-        assertOrderEditable(order); // Verifica si el pedido es editable
-        OrderItem item = orderItemRepository.findByOrder_IdAndId(orderId, itemId) // Busca el item por su id
+    public void removeOrderItem(Long orderId, Long itemId) { 
+        Order order = getOrderById(orderId); 
+        assertOrderEditable(order); 
+        OrderItem item = orderItemRepository.findByOrder_IdAndId(orderId, itemId) 
                 .orElseThrow(() -> new ResourceNotFoundException("Detalle de pedido no encontrado"));
-        Wine wine = wineRepository.findById(item.getWine().getId()) // Busca el vino por su id
+        Wine wine = wineRepository.findById(item.getWine().getId()) 
                 .orElseThrow(() -> new ResourceNotFoundException("Vino no encontrado"));
-        wine.setStock(wine.getStock() + item.getQuantity()); // Restaura el stock del vino
+        wine.setStock(wine.getStock() + item.getQuantity()); 
         wineRepository.save(wine);
-        orderItemRepository.delete(item); // Elimina el item
-        recalcOrderTotal(orderId); // Recalcula el total del pedido
-    } // Método para eliminar un item de un pedido
+        orderItemRepository.delete(item); 
+        recalcOrderTotal(orderId); 
+    } 
 
-    private OrderItem addOrMergeItem(Long orderId, Long wineId, int quantity) { // Método para agregar o mergear un item
-                                                                                // a un pedido
+    private OrderItem addOrMergeItem(Long orderId, Long wineId, int quantity) { 
         Order order = getOrderById(orderId);
-        assertOrderEditable(order); // Verifica si el pedido es editable
-        Wine wine = wineRepository.findById(wineId) // Busca el vino por su id
+        assertOrderEditable(order); 
+        Wine wine = wineRepository.findById(wineId) 
                 .orElseThrow(() -> new ResourceNotFoundException("Vino no encontrado: " + wineId));
-        List<OrderItem> existing = orderItemRepository.findByOrder_Id(orderId); // Busca los items del pedido por su id
+        List<OrderItem> existing = orderItemRepository.findByOrder_Id(orderId); 
         Optional<OrderItem> sameWine = existing.stream()
                 .filter(i -> i.getWine().getId().equals(wineId))
                 .findFirst();
@@ -219,8 +206,8 @@ public class OrderServiceImpl implements OrderService { // Implementación del s
         return saved;
     }
 
-    private OrderItem mergeExistingLine(OrderItem item, int additionalQty, Long orderId) { // Método para mergear un
-                                                                                           // item existente a un pedido
+    private OrderItem mergeExistingLine(OrderItem item, int additionalQty, Long orderId) { 
+                                                                                           
         Wine wine = wineRepository.findById(item.getWine().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Vino no encontrado"));
         if (wine.getStock() < additionalQty) {
@@ -237,29 +224,26 @@ public class OrderServiceImpl implements OrderService { // Implementación del s
         return saved;
     }
 
-    private void assertOrderEditable(Order order) { // Método para verificar si el pedido es editable
+    private void assertOrderEditable(Order order) { 
         if (order.getStatus() != OrderStatus.CREATED) {
-            throw new BadRequestException("Solo se pueden modificar ítems de pedidos en estado CREATED"); // Lanza una
-                                                                                                          // excepción
-                                                                                                          // si el
-                                                                                                          // pedido no
-                                                                                                          // es editable
+            throw new BadRequestException("Solo se pueden modificar ítems de pedidos en estado CREATED"); 
+                                                                                                          
         }
-    } // Método para verificar si el pedido es editable
+    } 
 
-    private void restoreStockForOrder(Long orderId) { // Método para restaurar el stock del pedido
-        List<OrderItem> items = orderItemRepository.findByOrder_Id(orderId); // Busca los items del pedido por su id
-        for (OrderItem item : items) { // Para cada item en el pedido
-            Wine wine = wineRepository.findById(item.getWine().getId()) // Busca el vino por su id
+    private void restoreStockForOrder(Long orderId) { 
+        List<OrderItem> items = orderItemRepository.findByOrder_Id(orderId); 
+        for (OrderItem item : items) { 
+            Wine wine = wineRepository.findById(item.getWine().getId()) 
                     .orElseThrow(() -> new ResourceNotFoundException("Vino no encontrado"));
-            wine.setStock(wine.getStock() + item.getQuantity()); // Restaura el stock del vino
-            wineRepository.save(wine); // Guarda el vino
+            wine.setStock(wine.getStock() + item.getQuantity()); 
+            wineRepository.save(wine);
         }
-    } // Método para restaurar el stock del pedido
+    } 
 
-    private void recalcOrderTotal(Long orderId) { // Método para recalcular el total del pedido
-        Order order = getOrderById(orderId); // Obtiene el pedido por su id
-        List<OrderItem> items = orderItemRepository.findByOrder_Id(orderId); // Busca los items del pedido por su id
+    private void recalcOrderTotal(Long orderId) { 
+        Order order = getOrderById(orderId); 
+        List<OrderItem> items = orderItemRepository.findByOrder_Id(orderId); 
         BigDecimal total = items.stream()
                 .map(OrderItem::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

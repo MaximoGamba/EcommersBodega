@@ -14,11 +14,14 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -138,6 +141,39 @@ public class RestExceptionHandler {
         return body(HttpStatus.BAD_REQUEST,
                 ex.getMessage() != null ? ex.getMessage() : "Argumento inválido",
                 "ILLEGAL_ARGUMENT");
+    }
+
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<Map<String, Object>> noHandlerFound(NoHandlerFoundException ex) {
+        log.debug("Ruta no encontrada: {} {}", ex.getHttpMethod(), ex.getRequestURL());
+        return body(HttpStatus.NOT_FOUND,
+                "No existe el endpoint: " + ex.getHttpMethod() + " " + ex.getRequestURL(),
+                "NOT_FOUND");
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<Map<String, Object>> methodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        log.debug("Método HTTP no soportado: {}", ex.getMethod());
+        String supported = ex.getSupportedHttpMethods() != null ? ex.getSupportedHttpMethods().toString() : "desconocido";
+        return body(HttpStatus.METHOD_NOT_ALLOWED,
+                "El método " + ex.getMethod() + " no está permitido aquí. Métodos aceptados: " + supported,
+                "METHOD_NOT_ALLOWED");
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<Map<String, Object>> mediaTypeNotSupported(HttpMediaTypeNotSupportedException ex) {
+        log.debug("Content-Type no soportado: {}", ex.getContentType());
+        return body(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                "El Content-Type '" + ex.getContentType() + "' no está soportado. Usá application/json",
+                "UNSUPPORTED_MEDIA_TYPE");
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> unhandled(Exception ex) {
+        log.error("Error inesperado no manejado", ex);
+        return body(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Ocurrió un error interno en el servidor. Por favor intentá más tarde",
+                "INTERNAL_ERROR");
     }
 
     private static ResponseEntity<Map<String, Object>> body(HttpStatus status, String message, String code) {

@@ -17,26 +17,26 @@ import com.uade.tpo.demo.service.payload.PagoCreateInput;
 import com.uade.tpo.demo.service.payload.PagoUpdateInput;
 
 @Service
-public class PaymentServiceImpl implements PaymentService { // Implementación del servicio para pagos
+public class PaymentServiceImpl implements PaymentService { 
 
-    @Autowired // Inyección de dependencias
-    private PaymentRepository paymentRepository; // Repositorio para pagos
+    @Autowired 
+    private PaymentRepository paymentRepository; 
 
-    @Autowired // Inyección de dependencias
-    private OrderRepository orderRepository; // Repositorio para pedidos
+    @Autowired 
+    private OrderRepository orderRepository; 
 
-    @Override // Override del método para crear un pago para un pedido
-    @Transactional // Transacción para crear un pago para un pedido
-    public Payment createForOrder(Long orderId, PagoCreateInput input) { // Método para crear un pago para un pedido
-        Order order = orderRepository.findById(orderId) // Obtiene el pedido por su id
+    @Override 
+    @Transactional 
+    public Payment createForOrder(Long orderId, PagoCreateInput input) { 
+        Order order = orderRepository.findById(orderId) 
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado: " + orderId));
-        if (paymentRepository.findByOrder_Id(orderId).isPresent()) { // Si el pedido ya tiene un pago registrado
+        if (paymentRepository.findByOrder_Id(orderId).isPresent()) { 
             throw new BadRequestException("El pedido ya tiene un pago registrado");
         }
-        if (input.getAmount() == null || input.getAmount().signum() <= 0) { // Si el monto es nulo o menor a 0
+        if (input.getAmount() == null || input.getAmount().signum() <= 0) { 
             throw new BadRequestException("El monto debe ser mayor a 0");
         }
-        Payment payment = Payment.builder() // Crea un nuevo pago
+        Payment payment = Payment.builder() 
                 .order(order)
                 .amount(input.getAmount())
                 .status(PaymentStatus.PENDING)
@@ -51,22 +51,28 @@ public class PaymentServiceImpl implements PaymentService { // Implementación d
 
     @Override
     @Transactional(readOnly = true)
-    public Payment getById(Long id) { // Método para obtener un pago por su id
+    public Payment getById(Long id) { 
         return paymentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pago no encontrado: " + id));
-    } // Método para obtener un pago por su id
+    } 
 
-    @Override // Override del método para obtener un pago por su id
-    @Transactional // Transacción para actualizar un pago
-    public Payment update(Long id, PagoUpdateInput input) { // Método para actualizar un pago
-        Payment payment = getById(id); // Obtiene el pago por su id
-        if (input == null) { // Si el input es nulo retorna el pago
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Optional<Payment> getByOrderId(Long orderId) { 
+        return paymentRepository.findByOrder_Id(orderId);
+    }
+
+    @Override 
+    @Transactional 
+    public Payment update(Long id, PagoUpdateInput input) { 
+        Payment payment = getById(id); 
+        if (input == null) { 
             return payment;
         }
-        if (input.getStatus() != null) { // Si el estado es nulo establece el estado del pago
+        if (input.getStatus() != null) { 
             payment.setStatus(input.getStatus());
         }
-        if (input.getAmount() != null) { // Si el monto es nulo establece el monto del pago
+        if (input.getAmount() != null) { 
             payment.setAmount(input.getAmount());
         }
         return paymentRepository.save(payment);
