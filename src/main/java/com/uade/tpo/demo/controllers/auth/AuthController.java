@@ -10,15 +10,18 @@ import com.uade.tpo.demo.service.AuthenticationService;
 
 import lombok.RequiredArgsConstructor;
 
-@RestController
-@RequestMapping("/auth")
+@RestController 
+@RequestMapping("/auth") // Indica la ruta del controlador
 @RequiredArgsConstructor
-public class AuthController {
+                         
+public class AuthController { 
 
-    private final AuthenticationService authenticationService;
+    private final AuthenticationService authenticationService; 
 
-    @PostMapping("/login")
-    public ResponseEntity<AuthenticationResponse> login(@RequestBody AuthenticationRequest request) {
-        return ResponseEntity.ok(authenticationService.authenticate(request));
+    @PostMapping("/login") 
+    public ResponseEntity<AuthenticationResponse> login(@RequestBody AuthenticationRequest request) { 
+                                                                                                     
+                                                                                                      
+        return ResponseEntity.ok(authenticationService.authenticate(request)); 
     }
 }

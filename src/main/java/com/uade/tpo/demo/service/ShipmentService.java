@@ -4,11 +4,13 @@ import com.uade.tpo.demo.entity.Shipment;
 import com.uade.tpo.demo.service.payload.EnvioCreateInput;
 import com.uade.tpo.demo.service.payload.EnvioUpdateInput;
 
-public interface ShipmentService { // Servicio para envíos
+public interface ShipmentService { 
 
-    Shipment createForOrder(Long orderId, EnvioCreateInput input); // Método para crear un envío para un pedido
+    Shipment createForOrder(Long orderId, EnvioCreateInput input); 
 
-    Shipment getById(Long id); // Método para obtener un envío por su id
+    Shipment getById(Long id); 
 
-    Shipment update(Long id, EnvioUpdateInput input); // Método para actualizar un envío
-} // Servicio para envíos
+    Shipment update(Long id, EnvioUpdateInput input); 
+
+    java.util.Optional<Shipment> getByOrderId(Long orderId); 
+} 

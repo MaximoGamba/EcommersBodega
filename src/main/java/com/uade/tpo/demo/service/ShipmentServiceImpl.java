@@ -17,62 +17,67 @@ import com.uade.tpo.demo.service.payload.EnvioCreateInput;
 import com.uade.tpo.demo.service.payload.EnvioUpdateInput;
 
 @Service
-public class ShipmentServiceImpl implements ShipmentService { // Implementación del servicio para envíos
+public class ShipmentServiceImpl implements ShipmentService { 
 
     @Autowired
-    private ShipmentRepository shipmentRepository; // Repositorio para envíos
+    private ShipmentRepository shipmentRepository; 
 
     @Autowired
-    private OrderRepository orderRepository; // Repositorio para pedidos
+    private OrderRepository orderRepository; 
 
     @Override // Override del método para crear un envío para un pedido
     @Transactional // Transacción para crear un envío para un pedido
-    public Shipment createForOrder(Long orderId, EnvioCreateInput input) { // Método para crear un envío para un pedido
-        Order order = orderRepository.findById(orderId) // Obtiene el pedido por su id
+    public Shipment createForOrder(Long orderId, EnvioCreateInput input) { 
+        Order order = orderRepository.findById(orderId) 
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado: " + orderId));
-        if (shipmentRepository.findByOrder_Id(orderId).isPresent()) { // Si el pedido ya tiene un envío registrado
+        if (shipmentRepository.findByOrder_Id(orderId).isPresent()) { 
             throw new BadRequestException("El pedido ya tiene un envío registrado");
         }
-        if (input.getAddress() == null || input.getAddress().isBlank()) { // Si la dirección es nula o en blanco
+        if (input.getAddress() == null || input.getAddress().isBlank()) { 
             throw new BadRequestException("La dirección es obligatoria");
         }
-        Shipment shipment = Shipment.builder() // Crea un nuevo envío
+        Shipment shipment = Shipment.builder() 
                 .order(order)
                 .address(input.getAddress())
                 .status(ShipmentStatus.PENDING)
                 .trackingNumber(input.getTrackingNumber())
                 .createdAt(LocalDateTime.now())
                 .build();
-        shipment = shipmentRepository.save(shipment); // Guarda el envío
+        shipment = shipmentRepository.save(shipment); 
         order.setShipment(shipment);
-        orderRepository.save(order); // Guarda el pedido
-        return shipment; // Retorna el envío
-    } // Método para crear un envío para un pedido
+        orderRepository.save(order); 
+        return shipment; 
+    } 
 
-    @Override // Override del método para obtener un envío por su id
+    @Override 
     @Transactional(readOnly = true)
-    public Shipment getById(Long id) { // Método para obtener un envío por su id
+    public Shipment getById(Long id) { 
         return shipmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Envío no encontrado: " + id));
     }
 
-    @Override // Override del método para actualizar un envío
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Optional<Shipment> getByOrderId(Long orderId) { 
+        return shipmentRepository.findByOrder_Id(orderId);
+    }
+
+    @Override 
     @Transactional
-    public Shipment update(Long id, EnvioUpdateInput input) { // Método para actualizar un envío
-        Shipment shipment = getById(id); // Obtiene el envío por su id
-        if (input == null) { // Si el input es nulo retorna el envío
+    public Shipment update(Long id, EnvioUpdateInput input) { 
+        Shipment shipment = getById(id); 
+        if (input == null) { 
             return shipment;
         }
-        if (input.getAddress() != null) { // Si la dirección es nula establece la dirección del envío
+        if (input.getAddress() != null) { 
             shipment.setAddress(input.getAddress());
         }
-        if (input.getStatus() != null) { // Si el estado es nulo establece el estado del envío
+        if (input.getStatus() != null) { 
             shipment.setStatus(input.getStatus());
         }
-        if (input.getTrackingNumber() != null) { // Si el número de tracking es nulo establece el número de tracking del
-                                                 // envío
+        if (input.getTrackingNumber() != null) { 
             shipment.setTrackingNumber(input.getTrackingNumber());
         }
-        return shipmentRepository.save(shipment); // Guarda el envío
-    } // Método para actualizar un envío
-} // Implementación del servicio para envíos
+        return shipmentRepository.save(shipment); 
+    } 
+} 

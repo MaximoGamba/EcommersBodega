@@ -19,88 +19,118 @@ import com.uade.tpo.demo.repository.UserRepository;
 import com.uade.tpo.demo.service.payload.UserUpdateInput;
 
 @Service
-public class UserServiceImpl implements UserService { // Implementación del servicio para usuarios
+public class UserServiceImpl implements UserService { 
 
     @Autowired
-    private UserRepository userRepository; // Repositorio para usuarios
+    private UserRepository userRepository; 
 
     @Autowired
-    private RoleRepository roleRepository; // Repositorio para roles
+    private RoleRepository roleRepository; 
 
     @Autowired
     private PasswordEncoder passwordEncoder; // Codificador de contraseñas
 
     @Override
-    @Transactional(readOnly = true) // Transacción para obtener todos los usuarios
-    public List<User> getUsers() { // Método para obtener todos los usuarios
-        return userRepository.findAll();
-    } // Método para obtener todos los usuarios
+    @Transactional(readOnly = true) 
+    public List<User> getUsers() { 
+        return userRepository.findAll().stream()
+                .filter(user -> Boolean.TRUE.equals(user.getActive()))
+                .toList();
+    } 
 
     @Override
-    @Transactional(readOnly = true) // Transacción para obtener un usuario por su id
-    public User getUserById(Long id) { // Método para obtener un usuario por su id
-        return userRepository.findById(id)
+    @Transactional(readOnly = true) 
+    public User getUserById(Long id) { 
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + id));
-    } // Método para obtener un usuario por su id
+        if (!Boolean.TRUE.equals(user.getActive())) {
+            throw new ResourceNotFoundException("Usuario no encontrado: " + id);
+        }
+        return user;
+    } 
 
     @Override
     @Transactional
-    public User register(RegisterRequest request) { // Método para registrar un usuario
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) { // Si el email ya está registrado
+    public User register(RegisterRequest request) { 
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) { 
             throw new BadRequestException("El email ya está registrado");
         }
-        RoleName requestedRole = request.getRole() == null ? RoleName.USER : request.getRole(); // Si el rol es nulo
-                                                                                                // establece el rol de
-                                                                                                // usuario
-        Role role = roleRepository.findByName(requestedRole) // Busca un rol por su nombre
-                .orElseGet(() -> Objects.requireNonNull(
-                        roleRepository.save(Role.builder().name(requestedRole).build()))); // Si el rol no existe lo
-                                                                                           // crea
+        if (request.getUsername() == null || request.getUsername().isBlank()) {
+            throw new BadRequestException("El username es obligatorio");
+        }
+        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new BadRequestException("El username ya está registrado");
+        }
+        RoleName requestedRole = request.getRole() == null ? RoleName.USER : request.getRole(); 
+        Role role = roleRepository.findByName(requestedRole) 
+                .orElseGet(() -> Objects.requireNonNull( 
+                        roleRepository.save(Role.builder().name(requestedRole).build()))); 
 
-        User user = User.builder() // Crea un nuevo usuario
-                .firstName(request.getFirstname())
-                .lastName(request.getLastname()) // Establece el apellido del usuario
-                .email(request.getEmail()) // Establece el email del usuario
-                .password(passwordEncoder.encode(request.getPassword())) // Establece la contraseña del usuario
-                .role(role)
-                .build();
-        return userRepository.save(Objects.requireNonNull(user)); // Guarda el usuario
+        User user = User.builder()
+                .firstName(request.getFirstname()) 
+                .lastName(request.getLastname()) 
+                .email(request.getEmail()) 
+            .username(request.getUsername()) 
+                .password(passwordEncoder.encode(request.getPassword())) 
+                .role(role) 
+                .build(); 
+        return userRepository.save(Objects.requireNonNull(user)); 
     }
 
     @Override
-    @Transactional // Transacción para actualizar un usuario
-    public User updateUser(Long id, UserUpdateInput input) { // Método para actualizar un usuario
-        User user = getUserById(id); // Obtiene el usuario por su id
-        if (input.getEmail() != null && !input.getEmail().equals(user.getEmail())) { // Si el email es diferente al
-                                                                                     // email del usuario
-            if (userRepository.findByEmail(input.getEmail()).isPresent()) { // Si el email ya está en uso
+    @Transactional 
+    public User updateUser(Long id, UserUpdateInput input) { 
+        User user = getUserById(id); 
+        if (input.getEmail() != null && !input.getEmail().equals(user.getEmail())) { 
+            if (userRepository.findByEmail(input.getEmail()).isPresent()) { 
                 throw new BadRequestException("El email ya está en uso");
             }
-            user.setEmail(input.getEmail()); // Establece el email del usuario
+            user.setEmail(input.getEmail()); 
         }
-        if (input.getFirstName() != null) { // Si el nombre es nulo establece el nombre del usuario
-            user.setFirstName(input.getFirstName()); // Establece el nombre del usuario
+        if (input.getUsername() != null && !input.getUsername().equals(user.getUsername())) {
+            if (input.getUsername().isBlank()) {
+                throw new BadRequestException("El username no puede estar vacío");
+            }
+            if (userRepository.findByUsername(input.getUsername()).isPresent()) {
+                throw new BadRequestException("El username ya está en uso");
+            }
+            user.setUsername(input.getUsername());
+        }
+        if (input.getFirstName() != null) { 
+            user.setFirstName(input.getFirstName()); 
         }
         if (input.getLastName() != null) {
-            user.setLastName(input.getLastName()); // Establece el apellido del usuario
+            user.setLastName(input.getLastName()); 
         }
-        if (input.getName() != null) { // Si el nombre es nulo establece el nombre del usuario
-            user.setName(input.getName()); // Establece el nombre del usuario
+        if (input.getName() != null) { 
+            user.setName(input.getName()); 
         }
-        if (input.getPassword() != null && !input.getPassword().isBlank()) { // Si la contraseña es nula o en blanco
-                                                                             // establece la contraseña del usuario
-            user.setPassword(passwordEncoder.encode(input.getPassword())); // Establece la contraseña del usuario
+        if (input.getPassword() != null && !input.getPassword().isBlank()) {
+            if (input.getCurrentPassword() == null || input.getCurrentPassword().isBlank()) {
+                throw new BadRequestException("Debés ingresar tu contraseña actual para cambiarla");
+            }
+            if (!passwordEncoder.matches(input.getCurrentPassword(), user.getPassword())) {
+                throw new BadRequestException("La contraseña actual es incorrecta");
+            }
+            user.setPassword(passwordEncoder.encode(input.getPassword()));
         }
-        return userRepository.save(user); // Guarda el usuario
+        return userRepository.save(user); 
     }
 
     @Override
     @Transactional
-    public void deleteUser(Long id) { // Método para eliminar un usuario
-        if (!userRepository.existsById(id)) { // Si el usuario no existe
-            throw new ResourceNotFoundException("Usuario no encontrado: " + id); // Lanza una excepción si el usuario no
-                                                                                 // existe
-        }
-        userRepository.deleteById(id); // Elimina el usuario
-    } // Método para eliminar un usuario
+    public void deleteUser(Long id) { 
+        User user = getUserById(id);
+        user.setActive(false);
+        userRepository.save(user);
+    } 
+
+    @Override
+    @Transactional
+    public void activateUser(Long id) { 
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + id));
+        user.setActive(true);
+        userRepository.save(user);
+    }
 }

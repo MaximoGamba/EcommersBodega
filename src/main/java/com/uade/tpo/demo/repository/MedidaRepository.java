@@ -7,9 +7,8 @@ import org.springframework.stereotype.Repository;
 
 import com.uade.tpo.demo.entity.Medida;
 
-@Repository // Indica que la clase es un repositorio
-public interface MedidaRepository extends JpaRepository<Medida, Long> { // Extiende de JpaRepository para que tenga los
-                                                                        // métodos de CRUD
+@Repository 
+public interface MedidaRepository extends JpaRepository<Medida, Long> { 
 
-    Optional<Medida> findByName(String name); // Busca una medida por su nombre
+    Optional<Medida> findByName(String name); 
 }

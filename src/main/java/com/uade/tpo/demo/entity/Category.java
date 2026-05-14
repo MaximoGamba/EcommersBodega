@@ -8,8 +8,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
 
-@Data // Genera los getters y setters
-@Entity // Indica que la clase es una entidad
+@Data 
+@Entity 
 @Table(name = "categories")
 public class Category {
 
@@ -26,4 +26,7 @@ public class Category {
 
     @Column(nullable = false, unique = true)
     private String description;
+
+    @Column(nullable = false)
+    private Boolean active = true;
 }

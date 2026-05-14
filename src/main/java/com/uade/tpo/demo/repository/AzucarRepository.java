@@ -7,9 +7,8 @@ import org.springframework.stereotype.Repository;
 
 import com.uade.tpo.demo.entity.Azucar;
 
-@Repository // Indica que la clase es un repositorio
-public interface AzucarRepository extends JpaRepository<Azucar, Long> { // Extiende de JpaRepository para que tenga los
-                                                                        // métodos de CRUD
+@Repository 
+public interface AzucarRepository extends JpaRepository<Azucar, Long> { // Extiende de JpaRepository para que tenga los métodos de CRUD
 
-    Optional<Azucar> findByName(String name); // Busca un azúcar por su nombre
+    Optional<Azucar> findByName(String name); 
 }

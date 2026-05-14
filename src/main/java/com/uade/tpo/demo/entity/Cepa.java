@@ -13,16 +13,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data // Genera los getters y setters
-@Builder // Genera el builder para la clase
+@Data 
+@Builder 
 @NoArgsConstructor
-@AllArgsConstructor // Genera el constructor con todos los argumentos
-@Entity // Indica que la clase es una entidad
+@AllArgsConstructor 
+@Entity 
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 @Table(name = "cepas")
 public class Cepa {
-    @Id // Indica que el campo es la clave primaria
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Genera el id de la entidad
+    @Id 
+    @GeneratedValue(strategy = GenerationType.IDENTITY) 
 
     private Long id;
 

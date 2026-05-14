@@ -7,9 +7,8 @@ import org.springframework.stereotype.Repository;
 
 import com.uade.tpo.demo.entity.Elaboracion;
 
-@Repository // Indica que la clase es un repositorio
-public interface ElaboracionRepository extends JpaRepository<Elaboracion, Long> { // Extiende de JpaRepository para que
-                                                                                  // tenga los métodos de CRUD
+@Repository 
+public interface ElaboracionRepository extends JpaRepository<Elaboracion, Long> { 
 
-    Optional<Elaboracion> findByName(String name); // Busca una elaboración por su nombre
+    Optional<Elaboracion> findByName(String name); 
 }

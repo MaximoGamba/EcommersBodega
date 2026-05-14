@@ -8,9 +8,17 @@ import org.springframework.stereotype.Repository;
 
 import com.uade.tpo.demo.entity.User;
 
-@Repository // Indica que la clase es un repositorio
-public interface UserRepository extends JpaRepository<User, Long> { // Extiende de JpaRepository para que tenga los
-                                                                    // métodos de CRUD
+@Repository 
+public interface UserRepository extends JpaRepository<User, Long> { 
+    @EntityGraph(attributePaths = { "role" }) 
+    Optional<User> findByEmail(String mail); 
+
     @EntityGraph(attributePaths = { "role" })
-    Optional<User> findByEmail(String mail); // Busca un usuario por su email (role cargado para JWT / UserDetails)
+    Optional<User> findByUsername(String username);
+
+    @EntityGraph(attributePaths = { "role" })
+    Optional<User> findByUsernameAndActiveTrue(String username);
+
+    @EntityGraph(attributePaths = { "role" })
+    Optional<User> findByEmailAndActiveTrue(String mail);
 }

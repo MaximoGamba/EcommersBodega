@@ -13,18 +13,18 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data // Genera los getters y setters
-@Builder // Genera el builder para la clase
-@NoArgsConstructor // Genera el constructor sin argumentos
-@AllArgsConstructor // Genera el constructor con todos los argumentos
-@Entity // Indica que la clase es una entidad
-@Table(name = "roles")
+@Data 
+@Builder 
+@NoArgsConstructor 
+@AllArgsConstructor 
+@Entity 
+@Table(name = "roles") 
 public class Role {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Id 
+    @GeneratedValue(strategy = GenerationType.IDENTITY) 
+    private Long id; 
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, unique = true, length = 30)
-    private RoleName name;
+    @Enumerated(EnumType.STRING) 
+    @Column(nullable = false, unique = true, length = 30) 
+    private RoleName name; 
 }

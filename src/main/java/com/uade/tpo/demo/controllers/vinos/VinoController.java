@@ -1,6 +1,7 @@
 package com.uade.tpo.demo.controllers.vinos;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
@@ -9,7 +10,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -52,7 +52,19 @@ public class VinoController {
         Sort sort = direction.equalsIgnoreCase("DESC") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
         return wineService.searchWines(name, minPrice, maxPrice, year, colorId, cepaId, azucarId, crianzaId,
-                elaboracionId, medidaId, pageable);
+                elaboracionId, medidaId, false, pageable);
+    }
+
+    @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Page<Wine> listarTodosAdmin(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1000") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "ASC") String direction) {
+        Sort sort = direction.equalsIgnoreCase("DESC") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return wineService.searchWines(null, null, null, null, null, null, null, null, null, null, true, pageable);
     }
 
     @GetMapping("/{id}")
@@ -73,11 +85,17 @@ public class VinoController {
         return wineService.updateWine(id, toUpsertInput(request));
     }
 
-    @DeleteMapping("/{id}")
+    @PutMapping("/{id}/eliminar")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> eliminar(@PathVariable Long id) {
         wineService.deleteWine(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(Map.of("message", "Vino eliminado correctamente"));
+    }
+
+    @PutMapping("/{id}/activar")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Wine activar(@PathVariable Long id) {
+        return wineService.activateWine(id);
     }
 
     @PutMapping("/{id}/stock")
